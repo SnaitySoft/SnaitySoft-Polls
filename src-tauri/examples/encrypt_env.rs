@@ -1,7 +1,12 @@
-// Run this before building a release: `cargo run --bin encrypt_env`
+// Run this before building a release: `cargo run --example encrypt_env`
 // Reads src-tauri/.env (plain text, git-ignored) and writes src-tauri/.env.enc — the
 // encrypted file that actually gets bundled as a resource (see tauri.conf.json). Re-run
 // it any time .env changes; .env.enc is git-ignored too and gets regenerated locally.
+//
+// This lives under examples/, not src/bin/, on purpose: `cargo build`/`cargo build
+// --release` (what `tauri build` runs) compile every [[bin]] target in the package by
+// default, so as a bin this ended up getting bundled right alongside the app itself.
+// Examples are never built unless explicitly requested, so this stays out of the way.
 use app_lib::env_crypto;
 
 fn main() {

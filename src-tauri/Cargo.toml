@@ -1,5 +1,5 @@
 [package]
-name = "poll-multistream"
+name = "snaitysoft-polls"
 version = "0.1.0"
 description = "Poll system for Twitch and YouTube streams"
 authors = []
@@ -14,6 +14,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2.6.3", features = [] }
+rand = "0.8"
 
 [dependencies]
 serde_json = "1.0"
@@ -22,7 +23,22 @@ log = "0.4"
 tauri = { version = "2.11.3", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-store = "2"
+tauri-plugin-opener = "2"
 axum = { version = "0.8", features = ["ws"] }
 tokio = { version = "1", features = ["full"] }
 futures-util = "0.3"
 tokio-tungstenite = "0.26"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+rand = "0.8"
+urlencoding = "2"
+dotenvy = "0.15"
+sha2 = "0.10"
+base64 = "0.22"
+aes-gcm = "0.10"
+obfstr = "0.4"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"

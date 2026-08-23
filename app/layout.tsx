@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Poll Multistream",
+  title: "SnaitySoft Polls",
   description: "Sistema de polls para Twitch e YouTube",
 };
 

@@ -1,23 +1,38 @@
 "use client";
 
 import { useState } from "react";
+import { SquarePlus, GripVertical, Trash2, Plus, Bookmark, Rocket } from "lucide-react";
 import { usePollStore } from "@/store/usePollStore";
+import { PollTemplate } from "@/lib/poll/types";
 import { Toggle } from "@/components/ui/Toggle";
 
 const DEFAULT_DURATION = 60;
-const MAX_OPTIONS = 6;
+const MAX_QUESTION_LENGTH = 120;
+const DURATION_PRESETS = [30, 60, 120, 300, 600];
 
-export function PollCreator() {
-  const { poll, startPoll, endCurrentPoll } = usePollStore();
-  const [question, setQuestion] = useState("");
-  const [options, setOptions] = useState(["", ""]);
-  const [duration, setDuration] = useState(DEFAULT_DURATION);
-  const [uniqueVotes, setUniqueVotes] = useState(true);
+export function PollCreator({ prefill }: { prefill?: PollTemplate | null }) {
+  const { poll, startPoll, endCurrentPoll, saveTemplate, settings } = usePollStore();
+  const maxOptions = settings.maxPollOptions;
+  // PollCreator only ever mounts fresh with a prefill already set (the "Nova Poll" section
+  // unmounts/remounts on navigation), so lazy initial state covers it — no sync-on-prop-change
+  // effect needed.
+  const [question, setQuestion] = useState(prefill?.question ?? "");
+  const [options, setOptions] = useState(() => {
+    if (!prefill) return ["", ""];
+    return prefill.options.length >= 2 ? prefill.options : [...prefill.options, ""];
+  });
+  const [duration, setDuration] = useState(prefill?.durationSec ?? DEFAULT_DURATION);
+  const [customDuration, setCustomDuration] = useState(
+    prefill ? !DURATION_PRESETS.includes(prefill.durationSec) : false
+  );
+  const [uniqueVotes, setUniqueVotes] = useState(prefill?.uniqueVotes ?? true);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [saved, setSaved] = useState(false);
 
   const isActive = poll?.status === "active";
 
   function addOption() {
-    if (options.length < MAX_OPTIONS) setOptions([...options, ""]);
+    if (options.length < maxOptions) setOptions([...options, ""]);
   }
 
   function removeOption(i: number) {
@@ -31,10 +46,29 @@ export function PollCreator() {
     setOptions(next);
   }
 
+  function reorderOptions(from: number, to: number) {
+    if (from === to) return;
+    setOptions((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }
+
+  const validLabels = options.map((o) => o.trim()).filter(Boolean);
+  const isValid = !!question.trim() && validLabels.length >= 2;
+
   function handleStart() {
-    const labels = options.map((o) => o.trim()).filter(Boolean);
-    if (!question.trim() || labels.length < 2) return;
-    startPoll(question.trim(), labels, duration, uniqueVotes);
+    if (!isValid) return;
+    startPoll(question.trim(), validLabels, duration, uniqueVotes);
+  }
+
+  function handleSaveTemplate() {
+    if (!isValid) return;
+    saveTemplate({ question: question.trim(), options: validLabels, durationSec: duration, uniqueVotes });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
   }
 
   if (isActive) {
@@ -54,16 +88,25 @@ export function PollCreator() {
 
   return (
     <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-700 space-y-4">
-      <h2 className="text-white font-semibold text-lg">Nova Poll</h2>
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 rounded-lg border border-indigo-500/50 text-indigo-400 flex items-center justify-center shrink-0">
+          <SquarePlus size={16} />
+        </div>
+        <h2 className="text-white font-semibold text-lg">Criar Nova Poll</h2>
+      </div>
 
       <div>
-        <label className="text-zinc-400 text-xs uppercase tracking-wide mb-1 block">
-          Pergunta
-        </label>
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-zinc-400 text-xs uppercase tracking-wide">Pergunta</label>
+          <span className="text-zinc-600 text-xs tabular-nums">
+            {question.length}/{MAX_QUESTION_LENGTH}
+          </span>
+        </div>
         <input
           type="text"
           value={question}
-          onChange={(e) => setQuestion(e.target.value)}
+          onChange={(e) => setQuestion(e.target.value.slice(0, MAX_QUESTION_LENGTH))}
+          maxLength={MAX_QUESTION_LENGTH}
           placeholder="Qual a melhor opção?"
           className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
         />
@@ -71,10 +114,23 @@ export function PollCreator() {
 
       <div className="space-y-2">
         <label className="text-zinc-400 text-xs uppercase tracking-wide block">
-          Opções — chat digita 1, 2, 3… ou A, B, C…
+          Opções (mín. 2, máx. {maxOptions}) — chat digita 1, 2, 3… ou A, B, C…
         </label>
         {options.map((opt, i) => (
-          <div key={i} className="flex gap-2 items-center">
+          <div
+            key={i}
+            draggable
+            onDragStart={() => setDragIndex(i)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => {
+              if (dragIndex !== null) reorderOptions(dragIndex, i);
+              setDragIndex(null);
+            }}
+            className="flex gap-2 items-center"
+          >
+            <span className="text-zinc-600 cursor-grab active:cursor-grabbing shrink-0">
+              <GripVertical size={16} />
+            </span>
             <span className="text-zinc-500 text-sm w-5 shrink-0">{i + 1}.</span>
             <input
               type="text"
@@ -86,34 +142,36 @@ export function PollCreator() {
             {options.length > 2 && (
               <button
                 onClick={() => removeOption(i)}
-                className="text-zinc-500 hover:text-red-400 transition-colors text-sm px-2"
+                className="text-zinc-500 hover:text-red-400 transition-colors p-1"
               >
-                ✕
+                <Trash2 size={15} />
               </button>
             )}
           </div>
         ))}
-        {options.length < MAX_OPTIONS && (
+        {options.length < maxOptions && (
           <button
             onClick={addOption}
-            className="text-indigo-400 hover:text-indigo-300 text-sm transition-colors"
+            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-zinc-700 text-indigo-400 hover:text-indigo-300 hover:border-indigo-500/50 text-sm transition-colors"
           >
-            + Adicionar opção
+            <Plus size={15} />
+            Adicionar opção
           </button>
         )}
       </div>
 
       <div>
-        <label className="text-zinc-400 text-xs uppercase tracking-wide mb-1 block">
-          Duração (segundos)
-        </label>
-        <div className="flex gap-2">
-          {[30, 60, 120, 300].map((s) => (
+        <label className="text-zinc-400 text-xs uppercase tracking-wide mb-1 block">Duração</label>
+        <div className="flex flex-wrap gap-2">
+          {DURATION_PRESETS.map((s) => (
             <button
               key={s}
-              onClick={() => setDuration(s)}
+              onClick={() => {
+                setDuration(s);
+                setCustomDuration(false);
+              }}
               className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                duration === s
+                !customDuration && duration === s
                   ? "bg-indigo-600 text-white"
                   : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
               }`}
@@ -121,15 +179,25 @@ export function PollCreator() {
               {s >= 60 ? `${s / 60}min` : `${s}s`}
             </button>
           ))}
+          <button
+            onClick={() => setCustomDuration(true)}
+            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+              customDuration ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+            }`}
+          >
+            Personalizado
+          </button>
+        </div>
+        {customDuration && (
           <input
             type="number"
             value={duration}
             onChange={(e) => setDuration(Number(e.target.value))}
             min={10}
             max={3600}
-            className="w-20 bg-zinc-800 border border-zinc-600 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-indigo-500"
+            className="mt-2 w-28 bg-zinc-800 border border-zinc-600 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-indigo-500"
           />
-        </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between gap-3">
@@ -148,13 +216,25 @@ export function PollCreator() {
         />
       </div>
 
-      <button
-        onClick={handleStart}
-        disabled={!question.trim() || options.filter((o) => o.trim()).length < 2}
-        className="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold transition-colors"
-      >
-        Iniciar Poll
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={handleSaveTemplate}
+          disabled={!isValid}
+          title="Salvar como modelo em Minhas Polls"
+          className="shrink-0 px-3 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 text-sm"
+        >
+          <Bookmark size={15} />
+          {saved ? "Salvo!" : "Salvar"}
+        </button>
+        <button
+          onClick={handleStart}
+          disabled={!isValid}
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold transition-colors"
+        >
+          <Rocket size={16} />
+          Iniciar Poll
+        </button>
+      </div>
     </div>
   );
 }

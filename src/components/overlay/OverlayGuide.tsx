@@ -2,25 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-
-  async function handleCopy() {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  return (
-    <button
-      onClick={handleCopy}
-      className="shrink-0 text-xs px-2.5 py-1 rounded-md bg-zinc-700 hover:bg-zinc-600 text-zinc-300 transition-colors"
-    >
-      {copied ? "Copiado!" : "Copiar"}
-    </button>
-  );
-}
+import { CopyButton } from "@/components/ui/CopyButton";
 
 function Step({
   number,
@@ -90,7 +72,7 @@ export function OverlayGuide() {
           {/* Passos */}
           <div className="space-y-4">
             <Step number={1} title="Abra o OBS Studio">
-              <p>Certifique-se que o Poll Multistream está aberto e com uma poll ativa ou encerrada.</p>
+              <p>Certifique-se que o SnaitySoft Polls está aberto e com uma poll ativa ou encerrada.</p>
             </Step>
 
             <Step number={2} title='Adicione uma "Browser Source"'>
@@ -116,11 +98,17 @@ export function OverlayGuide() {
 
             <Step number={4} title="Configure o tamanho recomendado">
               <p>
-                Largura: <strong className="text-zinc-300">420</strong> px &nbsp;|&nbsp;
-                Altura: <strong className="text-zinc-300">300</strong> px
+                Largura: <strong className="text-zinc-300">700</strong> px — funciona pra
+                qualquer quantidade de opções.
+              </p>
+              <p className="mt-1">
+                Altura: <strong className="text-zinc-300">320</strong> px pra poll com 2 opções,
+                até <strong className="text-zinc-300">650</strong> px se usar o máximo de 10
+                (cada opção soma uns 45px).
               </p>
               <p className="text-zinc-500 text-xs mt-0.5">
-                Você pode ajustar livremente depois de posicionar na tela.
+                Se não souber o número exato, use 650px de altura — o overlay só ocupa o espaço
+                que precisa, sobrando área transparente embaixo.
               </p>
             </Step>
 
@@ -147,7 +135,7 @@ export function OverlayGuide() {
             </p>
             <ul className="text-zinc-400 text-xs space-y-1.5 list-none">
               <li>
-                ✅ O overlay funciona enquanto o Poll Multistream estiver aberto no computador.
+                ✅ O overlay funciona enquanto o SnaitySoft Polls estiver aberto no computador.
               </li>
               <li>
                 ✅ Se o OBS perder a conexão, ele reconecta sozinho em até 2 segundos.

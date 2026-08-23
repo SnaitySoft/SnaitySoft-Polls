@@ -11,6 +11,7 @@
     "store:allow-save",
     "store:allow-set",
     "store:allow-get",
-    "store:allow-clear"
+    "store:allow-clear",
+    "opener:allow-open-url"
   ]
 }

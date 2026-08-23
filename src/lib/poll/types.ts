@@ -26,8 +26,17 @@ export interface PollResult {
   percentages: Record<string, number>; // optionId → percent
 }
 
+export interface PollTemplate {
+  id: string;
+  question: string;
+  options: string[];
+  durationSec: number;
+  uniqueVotes: boolean;
+  createdAt: number;
+}
+
 export interface ChatMessage {
-  platform: "twitch" | "youtube";
+  platform: "twitch" | "youtube" | "kick";
   userId: string;
   username: string;
   text: string;

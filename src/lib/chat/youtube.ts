@@ -1,38 +1,52 @@
+import { invoke } from "@tauri-apps/api/core";
 import { ChatMessage } from "@/lib/poll/types";
 
-interface LiveChatMessageItem {
-  id: string;
-  snippet: {
-    publishedAt: string;
-    authorChannelId: string;
-    displayMessage: string;
-  };
-  authorDetails: {
-    channelId: string;
-    displayName: string;
-  };
+interface YoutubeScrapeStart {
+  apiKey: string;
+  clientVersion: string;
+  continuation: string;
 }
 
+interface YoutubeScrapedMessage {
+  id: string;
+  authorName: string;
+  authorChannelId: string;
+  text: string;
+  timestampMs: number;
+}
+
+interface YoutubeScrapePoll {
+  messages: YoutubeScrapedMessage[];
+  continuation: string;
+}
+
+// Reads chat via YouTube's internal "innertube" endpoint (the same one youtube.com's own web
+// player calls) instead of the official Data API v3 — the official liveChatMessages.list call
+// charges quota per request and exhausts the free 10k/day tier in a couple hours of continuous
+// polling. This is unofficial/undocumented and could change without notice. There's no OAuth
+// bot account involved and no way to post messages — this connector is read-only by design.
 export class YouTubeChatConnector {
-  private apiKey: string;
-  private videoId: string;
+  private liveUrl: string;
   private onMessage: (msg: ChatMessage) => void;
   private onStatusChange: (status: "disconnected" | "connecting" | "connected" | "error") => void;
 
-  private liveChatId: string | null = null;
-  private nextPageToken: string | null = null;
+  private apiKey: string | null = null;
+  private clientVersion: string | null = null;
+  private continuation: string | null = null;
   private timerId: ReturnType<typeof setTimeout> | null = null;
   private running = false;
   private seenIds = new Set<string>();
+  // the initial continuation from the live page includes a backlog of recent messages
+  // (same ones a viewer sees when opening chat) — drop anything older than connect time
+  // so only new messages surface, matching what other platforms' connectors already do.
+  private connectedAtMs = 0;
 
   constructor(
-    apiKey: string,
-    videoId: string,
+    liveUrl: string,
     onMessage: (msg: ChatMessage) => void,
     onStatusChange: (s: "disconnected" | "connecting" | "connected" | "error") => void
   ) {
-    this.apiKey = apiKey;
-    this.videoId = videoId;
+    this.liveUrl = liveUrl;
     this.onMessage = onMessage;
     this.onStatusChange = onStatusChange;
   }
@@ -40,23 +54,22 @@ export class YouTubeChatConnector {
   async connect() {
     this.onStatusChange("connecting");
     try {
-      this.liveChatId = await this.fetchLiveChatId();
+      if (!this.liveUrl) throw new Error("no live url configured");
+      const start = await invoke<YoutubeScrapeStart>("youtube_scrape_start", {
+        liveUrl: this.liveUrl,
+      });
+      this.apiKey = start.apiKey;
+      this.clientVersion = start.clientVersion;
+      this.continuation = start.continuation;
+      this.connectedAtMs = Date.now();
+
       this.running = true;
       this.onStatusChange("connected");
       this.schedulePoll(0);
-    } catch {
+    } catch (e) {
+      console.error("[youtube] falha ao conectar:", e);
       this.onStatusChange("error");
     }
-  }
-
-  private async fetchLiveChatId(): Promise<string> {
-    const url = `https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${this.videoId}&key=${this.apiKey}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("YT video fetch failed");
-    const data = await res.json();
-    const id: string | undefined = data.items?.[0]?.liveStreamingDetails?.activeLiveChatId;
-    if (!id) throw new Error("No active live chat found");
-    return id;
   }
 
   private schedulePoll(delayMs: number) {
@@ -64,29 +77,27 @@ export class YouTubeChatConnector {
   }
 
   private async pollMessages() {
-    if (!this.running || !this.liveChatId) return;
+    if (!this.running || !this.apiKey || !this.clientVersion || !this.continuation) return;
 
     try {
-      let url = `https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${this.liveChatId}&part=snippet,authorDetails&key=${this.apiKey}&maxResults=200`;
-      if (this.nextPageToken) url += `&pageToken=${this.nextPageToken}`;
+      const result = await invoke<YoutubeScrapePoll>("youtube_scrape_poll", {
+        apiKey: this.apiKey,
+        clientVersion: this.clientVersion,
+        continuation: this.continuation,
+      });
 
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("YT chat fetch failed");
-      const data = await res.json();
+      this.continuation = result.continuation;
 
-      this.nextPageToken = data.nextPageToken ?? null;
-      const pollingIntervalMs: number = data.pollingIntervalMillis ?? 3000;
-
-      const items: LiveChatMessageItem[] = data.items ?? [];
-      for (const item of items) {
+      for (const item of result.messages) {
         if (this.seenIds.has(item.id)) continue;
         this.seenIds.add(item.id);
+        if (item.timestampMs < this.connectedAtMs) continue;
         const msg: ChatMessage = {
           platform: "youtube",
-          userId: item.snippet.authorChannelId ?? item.authorDetails.channelId,
-          username: item.authorDetails.displayName,
-          text: item.snippet.displayMessage,
-          timestamp: new Date(item.snippet.publishedAt).getTime(),
+          userId: item.authorChannelId,
+          username: item.authorName,
+          text: item.text,
+          timestamp: item.timestampMs,
         };
         this.onMessage(msg);
       }
@@ -94,8 +105,9 @@ export class YouTubeChatConnector {
       // keep seenIds from growing unbounded
       if (this.seenIds.size > 5000) this.seenIds.clear();
 
-      this.schedulePoll(pollingIntervalMs);
-    } catch {
+      this.schedulePoll(3000);
+    } catch (e) {
+      console.error("[youtube] falha ao buscar mensagens do chat (scrape):", e);
       if (this.running) this.schedulePoll(5000); // retry on error
     }
   }
@@ -104,8 +116,10 @@ export class YouTubeChatConnector {
     this.running = false;
     if (this.timerId) clearTimeout(this.timerId);
     this.timerId = null;
-    this.liveChatId = null;
-    this.nextPageToken = null;
+    this.apiKey = null;
+    this.clientVersion = null;
+    this.continuation = null;
+    this.connectedAtMs = 0;
     this.seenIds.clear();
     this.onStatusChange("disconnected");
   }

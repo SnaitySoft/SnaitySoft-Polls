@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Poll Multistream",
+  "productName": "SnaitySoft Polls",
   "version": "0.1.0",
-  "identifier": "com.pollmultistream.app",
+  "identifier": "com.snaitysoft.polls",
   "build": {
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
@@ -12,22 +12,24 @@
   "app": {
     "windows": [
       {
-        "title": "Poll Multistream",
-        "width": 1100,
-        "height": 750,
-        "minWidth": 800,
-        "minHeight": 600,
+        "title": "SnaitySoft Polls",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 900,
+        "minHeight": 650,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "maximized": true
       }
     ],
     "security": {
-      "csp": "default-src 'self' ipc: http://ipc.localhost; connect-src 'self' ws://localhost:9898 https://www.googleapis.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+      "csp": "default-src 'self' ipc: http://ipc.localhost; connect-src 'self' ws://localhost:9898 wss://irc-ws.chat.twitch.tv https://api.kick.com https://kick.com wss://ws-us2.pusher.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
     }
   },
   "bundle": {
     "active": true,
     "targets": "all",
+    "resources": [".env.enc"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

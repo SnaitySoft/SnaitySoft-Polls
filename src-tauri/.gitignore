@@ -4,7 +4,7 @@
 /gen/schemas
 
 # OAuth app credentials — never commit. .env.enc is derived from .env (via
-# `cargo run --bin encrypt_env`) and regenerated locally, not something to version either.
+# `cargo run --example encrypt_env`) and regenerated locally, not something to version either.
 # .enc_key is the AES key build.rs generates on first build — must never be committed
 # either, or the encryption in env_crypto.rs is pointless on a public repo.
 /.env

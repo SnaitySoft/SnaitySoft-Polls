@@ -5,7 +5,7 @@ fn main() {
     // literal in source — the project is open source, so anything committed is public. It's
     // generated once per checkout into .enc_key (git-ignored, same treatment as .env) and
     // baked into the binary at compile time via cargo:rustc-env, picked up by env!() in
-    // env_crypto.rs. Re-running `cargo run --bin encrypt_env` after key generation keeps
+    // env_crypto.rs. Re-running `cargo run --example encrypt_env` after key generation keeps
     // .env.enc in sync — it always encrypts with whatever key this build sees.
     let key_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(".enc_key");
 

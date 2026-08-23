@@ -79,6 +79,15 @@ pnpm tauri build
 The installer lands in `src-tauri/target/release/bundle/`. Re-run `encrypt_env` any time you
 change `.env` — a stale `.env.enc` silently ships old credentials.
 
+### Releasing via CI
+
+Pushing a tag like `v0.2.0` triggers [`.github/workflows/release.yml`](.github/workflows/release.yml),
+which builds Windows, macOS (universal), and Linux bundles and publishes them as a GitHub
+pre-release. It needs three repo secrets set (Settings → Secrets and variables → Actions):
+`TWITCH_CLIENT_ID`, `KICK_CLIENT_ID`, `KICK_CLIENT_SECRET` — same values as your local `.env`.
+Bump the version in `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json`
+together before tagging.
+
 ## Platform integrations
 
 Each platform's official chat API has a real limitation for a local desktop app, so each one

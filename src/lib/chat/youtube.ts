@@ -69,6 +69,7 @@ export class YouTubeChatConnector {
     } catch (e) {
       console.error("[youtube] falha ao conectar:", e);
       this.onStatusChange("error");
+      throw e;
     }
   }
 

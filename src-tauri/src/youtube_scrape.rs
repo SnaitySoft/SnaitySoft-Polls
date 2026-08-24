@@ -23,9 +23,41 @@ fn find_between(haystack: &str, prefix: &str) -> Option<String> {
     Some(rest[..end].to_string())
 }
 
+async fn fetch_page(http: &reqwest::Client, url: &str) -> Result<String, String> {
+    let res = http.get(url).send().await.map_err(|e| e.to_string())?;
+    if !res.status().is_success() {
+        return Err(format!("HTTP {} ao buscar {url}", res.status()));
+    }
+    res.text().await.map_err(|e| e.to_string())
+}
+
 /// Users paste whatever the browser gave them — a youtube.com/watch?v=, a youtu.be short
-/// link, a /live/ link, or (rarely) just the bare 11-char video ID. Extract the ID from
-/// whichever shape shows up, trimming trailing query params like "&feature=share".
+/// link, a /live/ link, a channel's /@handle/live "current live" link, or (rarely) just the
+/// bare 11-char video ID. If a video ID is directly extractable, fetch its watch page
+/// straight away. Otherwise (e.g. /@handle/live, which redirects server-side and never
+/// exposes a video ID in the URL itself) fetch the pasted URL first and pull the video ID
+/// out of ITS page — confirmed empirically that /@handle/live embeds "videoId" but not the
+/// chat continuation itself, so a second fetch of the real /watch?v= page is required.
+async fn resolve_watch_html(http: &reqwest::Client, input: &str) -> Result<String, String> {
+    if let Some(video_id) = extract_video_id(input) {
+        return fetch_page(http, &format!("https://www.youtube.com/watch?v={video_id}")).await;
+    }
+
+    let trimmed = input.trim();
+    if !trimmed.contains("youtube.com") && !trimmed.contains("youtu.be") {
+        return Err("Não consegui reconhecer essa URL/ID de live do YouTube".to_string());
+    }
+    let normalized = if trimmed.starts_with("http") {
+        trimmed.to_string()
+    } else {
+        format!("https://{trimmed}")
+    };
+    let html = fetch_page(http, &normalized).await?;
+    let video_id = find_between(&html, "\"videoId\":\"")
+        .ok_or_else(|| "Não consegui reconhecer essa URL/ID de live do YouTube".to_string())?;
+    fetch_page(http, &format!("https://www.youtube.com/watch?v={video_id}")).await
+}
+
 fn extract_video_id(input: &str) -> Option<String> {
     let input = input.trim();
 
@@ -66,15 +98,8 @@ pub struct YoutubeScrapeStart {
 
 #[tauri::command]
 pub async fn youtube_scrape_start(live_url: String) -> Result<YoutubeScrapeStart, String> {
-    let video_id = extract_video_id(&live_url)
-        .ok_or_else(|| "Não consegui reconhecer essa URL/ID de live do YouTube".to_string())?;
-    let url = format!("https://www.youtube.com/watch?v={video_id}");
     let http = http_client()?;
-    let res = http.get(&url).send().await.map_err(|e| e.to_string())?;
-    if !res.status().is_success() {
-        return Err(format!("HTTP {} ao buscar a página da live", res.status()));
-    }
-    let html = res.text().await.map_err(|e| e.to_string())?;
+    let html = resolve_watch_html(&http, &live_url).await?;
 
     if html.contains("\"isReplay\":true") {
         return Err("Essa transmissão não está mais ao vivo".to_string());
@@ -84,8 +109,9 @@ pub async fn youtube_scrape_start(live_url: String) -> Result<YoutubeScrapeStart
         .ok_or_else(|| "Falha ao ler a página da live (api key)".to_string())?;
     let client_version = find_between(&html, "\"clientVersion\":\"")
         .ok_or_else(|| "Falha ao ler a página da live (clientVersion)".to_string())?;
-    let continuation = find_between(&html, "\"continuation\":\"")
-        .ok_or_else(|| "Falha ao ler a página da live (continuation)".to_string())?;
+    let continuation = find_between(&html, "\"continuation\":\"").ok_or_else(|| {
+        "Não achei o chat dessa live — o chat pode estar desativado nessa transmissão".to_string()
+    })?;
 
     Ok(YoutubeScrapeStart {
         api_key,

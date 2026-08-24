@@ -125,7 +125,9 @@ export function useChatConnections(): ChatConnectionActions {
     const { autoConnectTwitch, autoConnectYouTube, autoConnectKick, twitchBot, youtubeConfig, kickBot } =
       settingsRef.current;
     if (autoConnectTwitch && twitchBot.refreshToken) connectTwitch();
-    if (autoConnectYouTube && youtubeConfig.liveUrl) connectYouTube();
+    // connectYouTube can reject (unlike the other two) so its callers can surface the real
+    // error message — swallow it here since this fire-and-forget path has no UI to show it to.
+    if (autoConnectYouTube && youtubeConfig.liveUrl) connectYouTube().catch(() => {});
     if (autoConnectKick && kickBot.refreshToken) connectKick();
   }, [settingsLoaded, connectTwitch, connectYouTube, connectKick]);
 
@@ -154,7 +156,7 @@ export function useChatConnections(): ChatConnectionActions {
     (enabled: boolean) => {
       setSettings({ autoConnectYouTube: enabled });
       if (enabled) {
-        connectYouTube();
+        connectYouTube().catch(() => {});
       } else {
         disconnectYouTube();
       }

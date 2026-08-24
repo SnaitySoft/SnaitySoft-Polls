@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { SlidersHorizontal, TriangleAlert } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
+import { FolderOpen, SlidersHorizontal, TriangleAlert } from "lucide-react";
 import { usePollStore } from "@/store/usePollStore";
 import { SaveStatus, useSaveStatus } from "@/hooks/useSettingsPersistence";
 import { Toggle } from "@/components/ui/Toggle";
+import { useToastStore } from "@/store/useToastStore";
 
 const AUTO_CLEAR_OPTIONS: { value: number; label: string }[] = [
   { value: 0, label: "Nunca" },
@@ -48,6 +50,33 @@ function ResetDataButton() {
       className="text-xs px-3 py-1.5 rounded-lg border border-red-800 text-red-400 hover:bg-red-950/50 transition-colors"
     >
       Limpar todos os dados do app
+    </button>
+  );
+}
+
+function LogFolderButton() {
+  const pushToast = useToastStore((s) => s.pushToast);
+  const [loading, setLoading] = useState(false);
+
+  async function handleClick() {
+    setLoading(true);
+    try {
+      await invoke<string>("open_log_folder");
+    } catch (e) {
+      pushToast(typeof e === "string" ? e : "Falha ao abrir a pasta de logs", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors disabled:opacity-50"
+    >
+      <FolderOpen size={13} />
+      Abrir pasta de logs
     </button>
   );
 }
@@ -133,6 +162,15 @@ export function SettingsPanel({ saveStatus }: { saveStatus: SaveStatus }) {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="border-t border-zinc-800 pt-4 space-y-2">
+          <p className="text-zinc-300 text-sm font-medium">Logs</p>
+          <p className="text-zinc-500 text-xs">
+            Se algo der errado, esses arquivos ajudam a descobrir o motivo — útil pra mandar pra
+            quem for te ajudar a resolver.
+          </p>
+          <LogFolderButton />
         </div>
 
         <div className="border-t border-zinc-800 pt-4 space-y-2">

@@ -16,6 +16,9 @@ export function usePollsPersistence() {
     loadPollsData()
       .then((saved) => {
         if (Object.keys(saved).length > 0) setPollsData(saved);
+        console.log(
+          `[polls] dados carregados do disco (templates=${saved.templates?.length ?? 0} histórico=${saved.history?.length ?? 0})`
+        );
       })
       .finally(() => {
         setLoaded(true);

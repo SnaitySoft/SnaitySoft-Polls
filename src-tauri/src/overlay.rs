@@ -73,12 +73,14 @@ async fn ws_handler(
 }
 
 async fn handle_ws(socket: WebSocket, state: Arc<OverlayState>) {
+    log::info!("[overlay] OBS/browser source conectado ao WebSocket");
     let mut rx = state.tx.subscribe();
     let last = state.last.lock().await.clone();
     let (mut sender, mut receiver) = socket.split();
 
     if let Some(msg) = last {
         if sender.send(Message::Text(msg.into())).await.is_err() {
+            log::info!("[overlay] conexão encerrada ao enviar estado inicial");
             return;
         }
     }
@@ -98,6 +100,7 @@ async fn handle_ws(socket: WebSocket, state: Arc<OverlayState>) {
     }
 
     send_task.abort();
+    log::info!("[overlay] OBS/browser source desconectado do WebSocket");
 }
 
 async fn kick_oauth_callback(

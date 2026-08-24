@@ -19,6 +19,7 @@ export function useSettingsPersistence() {
     loadSettings()
       .then((saved) => {
         if (Object.keys(saved).length > 0) setSettings(saved);
+        console.log(`[settings] carregadas do disco (${Object.keys(saved).length} campos)`);
       })
       .finally(() => {
         setLoaded(true);

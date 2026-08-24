@@ -3715,6 +3715,7 @@ dependencies = [
  "tauri-plugin-log",
  "tauri-plugin-opener",
  "tauri-plugin-store",
+ "time",
  "tokio",
  "tokio-tungstenite 0.26.2",
  "urlencoding",

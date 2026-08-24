@@ -140,16 +140,19 @@ export const usePollStore = create<PollStore>((set, get) => ({
 
   setPollsDataLoaded: () => set({ pollsDataLoaded: true }),
 
-  setConnectionStatus: (platform, status) =>
+  setConnectionStatus: (platform, status) => {
+    console.log(`[connection] ${platform} -> ${status}`);
     set((state) => ({
       connections: { ...state.connections, [platform]: status },
-    })),
+    }));
+  },
 
   setOnOverlayUpdate: (cb) => set({ onOverlayUpdate: cb }),
 
   startPoll: (question, labels, durationSec, uniqueVotes) => {
     cancelAutoClear();
     const poll = createPoll(question, labels, durationSec, uniqueVotes);
+    console.log(`[poll] iniciada: "${question}" opções=${JSON.stringify(labels)} duração=${durationSec}s votoÚnico=${uniqueVotes}`);
     set({ poll, lastResult: null });
     get().onOverlayUpdate?.(JSON.stringify({ type: "poll_update", data: serializePoll(poll) }));
   },
@@ -158,6 +161,9 @@ export const usePollStore = create<PollStore>((set, get) => ({
     const { poll } = get();
     if (!poll) return;
     const result = endPoll(poll);
+    console.log(
+      `[poll] encerrada: "${poll.question}" vencedor=${result.winner?.label ?? "(sem votos)"} totalVotos=${result.totalVotes}`
+    );
     set((state) => ({
       poll: { ...poll, status: "ended" },
       lastResult: result,
@@ -176,6 +182,7 @@ export const usePollStore = create<PollStore>((set, get) => ({
 
   clearCurrentPoll: () => {
     cancelAutoClear();
+    console.log("[poll] prévia/overlay limpos");
     set({ poll: null, lastResult: null });
     get().onOverlayUpdate?.(JSON.stringify({ type: "poll_cleared", data: null }));
   },
@@ -210,21 +217,33 @@ export const usePollStore = create<PollStore>((set, get) => ({
 
   clearLog: () => set({ chatLog: [] }),
 
-  saveTemplate: (template) =>
+  saveTemplate: (template) => {
+    console.log(`[template] salvo: "${template.question}"`);
     set((state) => ({
       templates: [
         { ...template, id: `tpl-${Date.now()}`, createdAt: Date.now() },
         ...state.templates,
       ],
-    })),
+    }));
+  },
 
-  deleteTemplate: (id) =>
-    set((state) => ({ templates: state.templates.filter((t) => t.id !== id) })),
+  deleteTemplate: (id) => {
+    console.log(`[template] removido: ${id}`);
+    set((state) => ({ templates: state.templates.filter((t) => t.id !== id) }));
+  },
 
-  deleteHistoryEntry: (pollId) =>
-    set((state) => ({ history: state.history.filter((h) => h.poll.id !== pollId) })),
+  deleteHistoryEntry: (pollId) => {
+    console.log(`[history] entrada removida: ${pollId}`);
+    set((state) => ({ history: state.history.filter((h) => h.poll.id !== pollId) }));
+  },
 
-  clearHistory: () => set({ history: [] }),
+  clearHistory: () => {
+    console.log("[history] histórico limpo");
+    set({ history: [] });
+  },
 
-  resetAllData: () => set({ settings: DEFAULT_SETTINGS, templates: [], history: [] }),
+  resetAllData: () => {
+    console.log("[settings] todos os dados do app foram resetados");
+    set({ settings: DEFAULT_SETTINGS, templates: [], history: [] });
+  },
 }));

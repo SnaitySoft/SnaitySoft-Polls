@@ -52,6 +52,7 @@ export function BotConnect({
     try {
       await onConnect();
     } catch (e) {
+      console.error(`[bot ${label}] falha ao conectar:`, e);
       setError(errorMessage(e));
     } finally {
       setLoading(false);
@@ -101,6 +102,7 @@ export function LiveUrlConnect({
       onSetLiveUrl(value.trim());
       await onConnect();
     } catch (e) {
+      console.error("[youtube] falha ao conectar:", e);
       setError(errorMessage(e));
     } finally {
       setLoading(false);
@@ -166,6 +168,7 @@ export function TwitchBotConnect({
       setStatus("idle");
       setDevice(null);
     } catch (e) {
+      console.error("[twitch] falha ao conectar bot:", e);
       setError(errorMessage(e));
       setStatus("idle");
       setDevice(null);

@@ -204,6 +204,7 @@ export function useChatConnections(): ChatConnectionActions {
         interval: device.interval,
         expiresIn: device.expiresIn,
       });
+      console.log(`[twitch] bot conectado: ${result.username}`);
       setSettings({
         twitchBot: {
           username: result.username,
@@ -217,12 +218,14 @@ export function useChatConnections(): ChatConnectionActions {
   );
 
   const logoutTwitchBot = useCallback(() => {
+    console.log("[twitch] bot desconectado (logout)");
     setSettings({ twitchBot: EMPTY_TWITCH_BOT });
     disconnectTwitch();
   }, [setSettings, disconnectTwitch]);
 
   const setYoutubeLiveUrl = useCallback(
     (liveUrl: string) => {
+      console.log(`[youtube] live URL configurada: ${liveUrl}`);
       setSettings({ youtubeConfig: { liveUrl } });
       disconnectYouTube();
     },
@@ -231,6 +234,7 @@ export function useChatConnections(): ChatConnectionActions {
 
   const loginKickBot = useCallback(async () => {
     const result = await invoke<KickLoginResult>("kick_oauth_login");
+    console.log(`[kick] bot conectado: ${result.username}`);
     setSettings({
       kickBot: {
         username: result.username,
@@ -243,6 +247,7 @@ export function useChatConnections(): ChatConnectionActions {
   }, [setSettings]);
 
   const logoutKickBot = useCallback(() => {
+    console.log("[kick] bot desconectado (logout)");
     setSettings({ kickBot: EMPTY_KICK_BOT });
     disconnectKick();
   }, [setSettings, disconnectKick]);

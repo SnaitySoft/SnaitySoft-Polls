@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePollStore } from "@/store/usePollStore";
 import { loadPollsData, savePollsData } from "@/lib/polls/persistence";
+import { useToastStore } from "@/store/useToastStore";
 
 export function usePollsPersistence() {
   const { templates, history, setPollsData, setPollsDataLoaded } = usePollStore();
@@ -30,7 +31,9 @@ export function usePollsPersistence() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(() => {
-      savePollsData({ templates, history }).catch(() => {});
+      savePollsData({ templates, history }).catch(() => {
+        useToastStore.getState().pushToast("Falha ao salvar polls/histórico", "error");
+      });
     }, 800);
 
     return () => {

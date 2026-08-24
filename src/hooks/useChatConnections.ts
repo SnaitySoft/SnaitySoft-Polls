@@ -2,11 +2,14 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { EMPTY_TWITCH_BOT, EMPTY_KICK_BOT, usePollStore } from "@/store/usePollStore";
+import { ChatPlatform, EMPTY_TWITCH_BOT, EMPTY_KICK_BOT, usePollStore } from "@/store/usePollStore";
 import { TwitchChatConnector } from "@/lib/chat/twitch";
 import { YouTubeChatConnector } from "@/lib/chat/youtube";
 import { KickChatConnector } from "@/lib/chat/kick";
 import { getValidTwitchBotToken, getValidKickBotToken } from "@/lib/auth/botTokens";
+import { useToastStore } from "@/store/useToastStore";
+
+const PLATFORM_LABEL: Record<ChatPlatform, string> = { twitch: "Twitch", youtube: "YouTube", kick: "Kick" };
 
 interface TwitchDeviceStart {
   userCode: string;
@@ -50,12 +53,26 @@ export interface ChatConnectionActions {
 }
 
 export function useChatConnections(): ChatConnectionActions {
-  const { settings, settingsLoaded, setSettings, setConnectionStatus, processMessage, poll, lastResult } =
+  const { settings, settingsLoaded, setSettings, setConnectionStatus, processMessage, poll, lastResult, connections } =
     usePollStore();
+  const pushToast = useToastStore((s) => s.pushToast);
 
   const twitchRef = useRef<TwitchChatConnector | null>(null);
   const youtubeRef = useRef<YouTubeChatConnector | null>(null);
   const kickRef = useRef<KickChatConnector | null>(null);
+
+  // toast whenever a platform's connection transitions INTO "error" — covers auto-connect
+  // failures, manual connect failures, and a connection dropping mid-stream alike, so the
+  // user finds out even if they're not staring at the Conexões screen when it happens.
+  const prevConnections = useRef(connections);
+  useEffect(() => {
+    (Object.keys(connections) as ChatPlatform[]).forEach((platform) => {
+      if (connections[platform] === "error" && prevConnections.current[platform] !== "error") {
+        pushToast(`Erro na conexão com a ${PLATFORM_LABEL[platform]}`, "error");
+      }
+    });
+    prevConnections.current = connections;
+  }, [connections, pushToast]);
 
   // keep a ref to the latest settings so callbacks don't go stale
   const settingsRef = useRef(settings);

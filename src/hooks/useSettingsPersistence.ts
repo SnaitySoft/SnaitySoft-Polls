@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePollStore } from "@/store/usePollStore";
 import { loadSettings, saveSettings } from "@/lib/settings/persistence";
+import { useToastStore } from "@/store/useToastStore";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -42,6 +43,7 @@ export function useSettingsPersistence() {
       } catch {
         setStatus("error");
         setTimeout(() => setStatus("idle"), 3000);
+        useToastStore.getState().pushToast("Falha ao salvar configurações", "error");
       }
     }, 800);
 

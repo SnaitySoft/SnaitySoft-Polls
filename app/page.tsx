@@ -12,6 +12,7 @@ import { ChatLog } from "@/components/chat/ChatLog";
 import { ConnectionsView } from "@/components/connections/ConnectionsView";
 import { SettingsPanel } from "@/components/settings/SettingsPanel";
 import { OverlayGuide } from "@/components/overlay/OverlayGuide";
+import { ToastContainer } from "@/components/ui/ToastContainer";
 import { useOverlaySync } from "@/hooks/useOverlaySync";
 import { useSettingsPersistence } from "@/hooks/useSettingsPersistence";
 import { usePollsPersistence } from "@/hooks/usePollsPersistence";
@@ -56,6 +57,8 @@ export default function Home() {
         {section === "conexoes" && <ConnectionsView actions={chatActions} />}
         {section === "configuracoes" && <SettingsPanel saveStatus={saveStatus} />}
       </main>
+
+      <ToastContainer />
     </div>
   );
 }

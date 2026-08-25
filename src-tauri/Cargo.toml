@@ -1,7 +1,7 @@
 [package]
 name = "snaitysoft-polls"
-version = "0.1.0"
-description = "Poll system for Twitch and YouTube streams"
+version = "0.2.0"
+description = "Poll system for Twitch, YouTube, and Kick streams"
 authors = []
 license = "MIT"
 repository = "https://github.com/SnaitySoft/SnaitySoft-Polls"

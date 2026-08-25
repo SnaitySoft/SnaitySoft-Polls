@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Rust build output — generated, not source, and includes non-UTF8/binary files
+    // that crash the parser rather than just warning.
+    "src-tauri/target/**",
   ]),
 ]);
 

@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Poll system for Twitch and YouTube streams"
 authors = []
 license = "MIT"
-repository = ""
+repository = "https://github.com/SnaitySoft/SnaitySoft-Polls"
 edition = "2021"
 rust-version = "1.77.2"
 

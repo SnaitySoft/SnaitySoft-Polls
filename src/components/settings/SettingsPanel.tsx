@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { FolderOpen, Languages, SlidersHorizontal, TriangleAlert } from "lucide-react";
 import { usePollStore, Locale } from "@/store/usePollStore";
 import { SaveStatus, useSaveStatus } from "@/hooks/useSettingsPersistence";
 import { Toggle } from "@/components/ui/Toggle";
 import { useToastStore } from "@/store/useToastStore";
 import { useTranslation, useErrorMessage } from "@/lib/i18n/useTranslation";
+import { REPO_URL } from "@/lib/version/checkForUpdate";
+import { GitHubIcon } from "@/components/icons/BrandIcons";
 
 const AUTO_CLEAR_OPTIONS: { value: number; labelKey: "settings.autoClearNunca" | null; rawLabel?: string }[] = [
   { value: 0, labelKey: "settings.autoClearNunca" },
@@ -118,6 +121,36 @@ function LogFolderButton() {
   );
 }
 
+function RepositoryButton() {
+  const { t } = useTranslation();
+  const errorMessage = useErrorMessage();
+  const pushToast = useToastStore((s) => s.pushToast);
+  const [loading, setLoading] = useState(false);
+
+  async function handleClick() {
+    setLoading(true);
+    try {
+      await openUrl(REPO_URL);
+    } catch (e) {
+      console.error(t("log.openRepositoryFailed"), e);
+      pushToast(errorMessage(e), "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors disabled:opacity-50"
+    >
+      <GitHubIcon size={13} />
+      {t("settings.abrirRepositorio")}
+    </button>
+  );
+}
+
 export function SettingsPanel({ saveStatus }: { saveStatus: SaveStatus }) {
   const { t } = useTranslation();
   const { settings, setSettings } = usePollStore();
@@ -201,6 +234,12 @@ export function SettingsPanel({ saveStatus }: { saveStatus: SaveStatus }) {
           <p className="text-zinc-300 text-sm font-medium">{t("settings.logsTitulo")}</p>
           <p className="text-zinc-500 text-xs">{t("settings.logsDescricao")}</p>
           <LogFolderButton />
+        </div>
+
+        <div className="border-t border-zinc-800 pt-4 space-y-2">
+          <p className="text-zinc-300 text-sm font-medium">{t("settings.codigoFonteTitulo")}</p>
+          <p className="text-zinc-500 text-xs">{t("settings.codigoFonteDescricao")}</p>
+          <RepositoryButton />
         </div>
 
         <div className="border-t border-zinc-800 pt-4 space-y-2">

@@ -197,11 +197,19 @@ export const pt = {
   "log.youtubeBotConnectFailed": "[youtube] falha ao conectar:",
   "log.twitchBotConnectFailed": "[twitch] falha ao conectar bot:",
   "log.openLogFolderFailed": "[settings] falha ao abrir pasta de logs:",
+  "log.openRepositoryFailed": "[settings] falha ao abrir repositório:",
 
   "announce.pollStarted": "📊 {question} — vote no chat: {options}",
   "announce.pollEnded": "✅ Poll encerrada! Vencedor: {winner} — {total} voto(s)",
   "announce.noVotes": "sem votos",
   "announce.moreOptions": "+{n} mais",
+
+  "update.available": "🚀 Nova versão disponível: {version}",
+  "update.viewOnGithub": "Ver no GitHub",
+
+  "settings.codigoFonteTitulo": "Código-fonte",
+  "settings.codigoFonteDescricao": "SnaitySoft Polls é open source — veja o código, reporte bugs ou contribua.",
+  "settings.abrirRepositorio": "Abrir repositório no GitHub",
 } as const;
 
 export type TranslationKey = keyof typeof pt;

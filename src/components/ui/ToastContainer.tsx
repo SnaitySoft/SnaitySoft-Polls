@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useToastStore, ToastType } from "@/store/useToastStore";
 
 const STYLES: Record<ToastType, { border: string; icon: React.ReactNode }> = {
@@ -33,7 +34,17 @@ export function ToastContainer() {
             className={`pointer-events-auto flex items-start gap-2 rounded-lg border ${style.border} px-3 py-2.5 shadow-lg`}
           >
             {style.icon}
-            <p className="text-sm text-zinc-100 flex-1 min-w-0 break-words">{toast.message}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-zinc-100 break-words">{toast.message}</p>
+              {toast.action && (
+                <button
+                  onClick={() => openUrl(toast.action!.url)}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 underline mt-1"
+                >
+                  {toast.action.label}
+                </button>
+              )}
+            </div>
             <button
               onClick={() => dismissToast(toast.id)}
               className="text-zinc-500 hover:text-zinc-300 transition-colors shrink-0"

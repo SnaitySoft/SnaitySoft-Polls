@@ -23,7 +23,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' ipc: http://ipc.localhost; connect-src 'self' ws://localhost:9898 wss://irc-ws.chat.twitch.tv https://api.kick.com https://kick.com wss://ws-us2.pusher.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+      "csp": "default-src 'self' ipc: http://ipc.localhost; connect-src 'self' ws://localhost:9898 wss://irc-ws.chat.twitch.tv https://api.kick.com https://kick.com wss://ws-us2.pusher.com https://api.github.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
     }
   },
   "bundle": {

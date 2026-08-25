@@ -18,11 +18,13 @@ import { useSettingsPersistence } from "@/hooks/useSettingsPersistence";
 import { usePollsPersistence } from "@/hooks/usePollsPersistence";
 import { useChatConnections } from "@/hooks/useChatConnections";
 import { attachConsoleLog } from "@/lib/logging/attachConsoleLog";
+import { checkForUpdate } from "@/lib/version/checkForUpdate";
 import { PollTemplate } from "@/lib/poll/types";
 
 export default function Home() {
   useEffect(() => {
     attachConsoleLog();
+    checkForUpdate();
   }, []);
   useOverlaySync();
   const { status: saveStatus } = useSettingsPersistence();

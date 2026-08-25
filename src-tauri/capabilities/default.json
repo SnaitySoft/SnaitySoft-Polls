@@ -13,6 +13,7 @@
     "store:allow-get",
     "store:allow-clear",
     "opener:allow-open-url",
+    "opener:allow-default-urls",
     "log:default"
   ]
 }

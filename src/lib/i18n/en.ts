@@ -198,9 +198,17 @@ export const en: Record<TranslationKey, string> = {
   "log.youtubeBotConnectFailed": "[youtube] failed to connect:",
   "log.twitchBotConnectFailed": "[twitch] failed to connect bot:",
   "log.openLogFolderFailed": "[settings] failed to open logs folder:",
+  "log.openRepositoryFailed": "[settings] failed to open repository:",
 
   "announce.pollStarted": "📊 {question} — vote in chat: {options}",
   "announce.pollEnded": "✅ Poll ended! Winner: {winner} — {total} vote(s)",
   "announce.noVotes": "no votes",
   "announce.moreOptions": "+{n} more",
+
+  "update.available": "🚀 New version available: {version}",
+  "update.viewOnGithub": "View on GitHub",
+
+  "settings.codigoFonteTitulo": "Source code",
+  "settings.codigoFonteDescricao": "SnaitySoft Polls is open source — check out the code, report bugs, or contribute.",
+  "settings.abrirRepositorio": "Open repository on GitHub",
 };

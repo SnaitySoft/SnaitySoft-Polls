@@ -85,8 +85,12 @@ Pushing a tag like `v0.2.0` triggers [`.github/workflows/release.yml`](.github/w
 which builds Windows, macOS (universal), and Linux bundles and publishes them as a GitHub
 pre-release. It needs three repo secrets set (Settings → Secrets and variables → Actions):
 `TWITCH_CLIENT_ID`, `KICK_CLIENT_ID`, `KICK_CLIENT_SECRET` — same values as your local `.env`.
-Bump the version in `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json`
-together before tagging.
+
+Before tagging:
+1. Bump the version in `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` together.
+2. Add a `## [x.y.z]` section to [`CHANGELOG.md`](CHANGELOG.md) — the workflow extracts it
+   (up to the next `## [` heading) and uses it as the GitHub release body. If the tag has no
+   matching heading, it falls back to a generic message instead of failing.
 
 ## Platform integrations
 

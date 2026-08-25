@@ -83,6 +83,27 @@ jobs:
           touch .env.enc
           cargo run --example encrypt_env
 
+      # Pulls this tag's section out of CHANGELOG.md (## [x.y.z] ... up to the next ## [
+      # heading) so the GitHub release body is the real curated notes, not a placeholder.
+      # Falls back to a generic message if the tag has no matching heading yet.
+      - name: extract release notes
+        id: notes
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          NOTES=$(awk -v ver="$VERSION" '
+            /^## \[/ { if (found) exit; if (index($0, "[" ver "]") > 0) { found=1; next } }
+            found { print }
+          ' CHANGELOG.md)
+          if [ -z "$NOTES" ]; then
+            NOTES="See the assets below to download and install this version."
+          fi
+          {
+            echo "body<<RELEASE_NOTES_EOF"
+            echo "$NOTES"
+            echo "RELEASE_NOTES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: build and publish
         uses: tauri-apps/tauri-action@v1
         env:
@@ -90,7 +111,7 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'SnaitySoft Polls ${{ github.ref_name }}'
-          releaseBody: 'See the assets below to download and install this version.'
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: false
           prerelease: true
           args: ${{ matrix.args }}

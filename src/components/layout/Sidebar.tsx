@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { getVersion } from "@tauri-apps/api/app";
 import { SquarePlus, ListChecks, History, Link2, Settings } from "lucide-react";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -26,10 +27,14 @@ export function Sidebar({
 }) {
   const { t } = useTranslation();
   const [port, setPort] = useState(9898);
+  const [version, setVersion] = useState("");
 
   useEffect(() => {
     invoke<number>("get_overlay_port")
       .then(setPort)
+      .catch(() => {});
+    getVersion()
+      .then(setVersion)
       .catch(() => {});
   }, []);
 
@@ -40,7 +45,10 @@ export function Sidebar({
       <div className="flex items-center gap-2.5 px-5 py-5">
         {/* eslint-disable-next-line @next/next/no-img-element -- static export + unoptimized images, plain img is fine */}
         <img src="/icon.png" alt="" className="w-8 h-8 rounded-lg shrink-0" />
-        <span className="text-white font-bold text-base tracking-tight">SnaitySoft Polls</span>
+        <div className="min-w-0">
+          <span className="text-white font-bold text-base tracking-tight block">SnaitySoft Polls</span>
+          {version && <span className="text-zinc-500 text-[10px] leading-none">v{version}</span>}
+        </div>
       </div>
 
       <nav className="flex-1 px-3 space-y-1">

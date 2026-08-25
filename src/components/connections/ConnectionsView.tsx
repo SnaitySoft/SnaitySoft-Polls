@@ -5,6 +5,7 @@ import { ChatConnectionActions } from "@/hooks/useChatConnections";
 import { BotConnect, TwitchBotConnect, LiveUrlConnect } from "@/components/connections/BotConnect";
 import { TwitchIcon, YouTubeIcon, KickIcon } from "@/components/icons/BrandIcons";
 import { StatusDot, statusLabel, PlatformBadge } from "@/components/chat/PlatformUI";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 function ConnectionCard({
   icon,
@@ -25,6 +26,7 @@ function ConnectionCard({
   connectedAs: string;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       className={`bg-zinc-900 rounded-xl border border-zinc-700 border-t-2 ${accentClass} p-5 flex flex-col gap-4`}
@@ -35,7 +37,7 @@ function ConnectionCard({
           <h3 className="text-white font-semibold">{name}</h3>
           <div className="flex items-center gap-1.5">
             <StatusDot status={status} />
-            <span className="text-zinc-500 text-xs truncate">{statusLabel(status, connectedAs)}</span>
+            <span className="text-zinc-500 text-xs truncate">{statusLabel(status, connectedAs, t)}</span>
           </div>
         </div>
       </div>
@@ -48,15 +50,14 @@ function ConnectionCard({
 }
 
 export function ConnectionsView({ actions }: { actions: ChatConnectionActions }) {
+  const { t } = useTranslation();
   const { settings, connections } = usePollStore();
 
   return (
     <div className="max-w-5xl mx-auto space-y-5">
       <div>
-        <h2 className="text-white font-semibold text-xl">Conexões</h2>
-        <p className="text-zinc-500 text-sm mt-0.5">
-          Conecte uma conta de bot por plataforma — ela lê e posta no chat do seu canal/live.
-        </p>
+        <h2 className="text-white font-semibold text-xl">{t("connections.titulo")}</h2>
+        <p className="text-zinc-500 text-sm mt-0.5">{t("connections.descricao")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
@@ -65,7 +66,7 @@ export function ConnectionsView({ actions }: { actions: ChatConnectionActions })
           badgeClass="bg-purple-600"
           accentClass="border-t-purple-500"
           name="Twitch"
-          description="Lê e posta no chat do seu canal usando a conta do bot conectado."
+          description={t("connections.twitchDesc")}
           status={connections.twitch}
           connectedAs={settings.twitchBot.username && `#${settings.twitchBot.username}`}
         >
@@ -82,9 +83,9 @@ export function ConnectionsView({ actions }: { actions: ChatConnectionActions })
           badgeClass="bg-red-600"
           accentClass="border-t-red-500"
           name="YouTube"
-          description="Lê o chat da live colada abaixo. Sem login — não posta mensagens no YouTube."
+          description={t("connections.youtubeDesc")}
           status={connections.youtube}
-          connectedAs={connections.youtube === "connected" ? "live conectada" : ""}
+          connectedAs={connections.youtube === "connected" ? t("connections.liveConectada") : ""}
         >
           <LiveUrlConnect
             liveUrl={settings.youtubeConfig.liveUrl}
@@ -100,22 +101,18 @@ export function ConnectionsView({ actions }: { actions: ChatConnectionActions })
           badgeClass="bg-green-600"
           accentClass="border-t-green-500"
           name="Kick"
-          description="Lê e posta no chat do canal do bot conectado."
+          description={t("connections.kickDesc")}
           status={connections.kick}
           connectedAs={settings.kickBot.username && `#${settings.kickBot.username}`}
         >
           <div className="space-y-2">
             <BotConnect
-              label="da Kick"
               connectedAs={settings.kickBot.username}
               onConnect={actions.loginKickBot}
               onDisconnect={actions.logoutKickBot}
               accentClass="bg-green-600 hover:bg-green-500"
             />
-            <p className="text-zinc-600 text-xs">
-              A leitura do chat da Kick usa um canal não-oficial da própria Kick — se parar de
-              funcionar de uma hora pra outra, pode ser mudança do lado deles.
-            </p>
+            <p className="text-zinc-600 text-xs">{t("connections.kickAviso")}</p>
           </div>
         </ConnectionCard>
       </div>

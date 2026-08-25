@@ -20,4 +20,9 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  /* Backstop against unbroken long strings (a poll option, a chat message) forcing a
+     flex child past its container width and pushing a horizontal scrollbar onto the
+     whole window — the individual components should already wrap their own text, but
+     this guarantees the app itself never does, regardless of what future content does. */
+  overflow-x: hidden;
 }

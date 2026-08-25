@@ -3,29 +3,31 @@
 import { BarChart3, Trash2 } from "lucide-react";
 import { usePollStore } from "@/store/usePollStore";
 import { PollOption } from "@/lib/poll/types";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
-function CardHeader() {
+function CardHeader({ t }: { t: ReturnType<typeof useTranslation>["t"] }) {
   return (
     <div className="flex items-center gap-2">
       <BarChart3 size={17} className="text-indigo-400" />
-      <h2 className="text-white font-semibold text-sm">Prévia da Poll</h2>
+      <h2 className="text-white font-semibold text-sm">{t("pollResults.previaDaPoll")}</h2>
     </div>
   );
 }
 
 export function PollResults() {
+  const { t } = useTranslation();
   const { poll, lastResult, clearCurrentPoll } = usePollStore();
 
   if (!poll && !lastResult) {
     return (
       <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-700 space-y-4">
-        <CardHeader />
+        <CardHeader t={t} />
         <div className="flex flex-col items-center justify-center text-center gap-2 py-8">
           <div className="w-16 h-16 rounded-full bg-zinc-800/60 flex items-center justify-center">
             <BarChart3 size={26} className="text-indigo-500/70" />
           </div>
-          <p className="text-zinc-300 text-sm font-medium">Nenhuma poll ativa</p>
-          <p className="text-zinc-600 text-xs">A prévia da poll aparecerá aqui.</p>
+          <p className="text-zinc-300 text-sm font-medium">{t("pollResults.nenhumaPollAtiva")}</p>
+          <p className="text-zinc-600 text-xs">{t("pollResults.previaApareceraAqui")}</p>
         </div>
       </div>
     );
@@ -40,17 +42,19 @@ export function PollResults() {
   return (
     <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-700 space-y-4">
       <div className="flex items-start justify-between gap-2">
-        <CardHeader />
+        <CardHeader t={t} />
         {isEnded && (
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs bg-zinc-700 text-zinc-300 px-2 py-0.5 rounded-full">Encerrada</span>
+            <span className="text-xs bg-zinc-700 text-zinc-300 px-2 py-0.5 rounded-full">
+              {t("pollResults.encerrada")}
+            </span>
             <button
               onClick={clearCurrentPoll}
-              title="Limpar prévia e overlay"
+              title={t("pollResults.limparTitle")}
               className="flex items-center gap-1 text-zinc-500 hover:text-red-400 text-xs transition-colors"
             >
               <Trash2 size={13} />
-              Limpar
+              {t("common.limpar")}
             </button>
           </div>
         )}
@@ -65,13 +69,13 @@ export function PollResults() {
 
           return (
             <div key={opt.id}>
-              <div className="flex justify-between text-sm mb-1">
-                <span className={`font-medium ${isWinner ? "text-indigo-300" : "text-zinc-300"}`}>
+              <div className="flex justify-between gap-2 text-sm mb-1">
+                <span className={`font-medium min-w-0 break-words ${isWinner ? "text-indigo-300" : "text-zinc-300"}`}>
                   <span className="text-zinc-500 mr-1.5">{i + 1}.</span>
                   {opt.label}
                   {isWinner && " 🏆"}
                 </span>
-                <span className="text-zinc-400 tabular-nums">
+                <span className="text-zinc-400 tabular-nums shrink-0">
                   {opt.votes} <span className="text-zinc-600">({pct}%)</span>
                 </span>
               </div>
@@ -89,7 +93,7 @@ export function PollResults() {
       </div>
 
       <p className="text-zinc-500 text-xs text-right">
-        {totalVotes} voto{totalVotes !== 1 ? "s" : ""}
+        {totalVotes} {t(totalVotes !== 1 ? "common.votoPlural" : "common.votoSingular")}
       </p>
     </div>
   );

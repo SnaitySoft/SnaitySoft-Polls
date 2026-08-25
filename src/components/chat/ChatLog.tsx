@@ -2,6 +2,7 @@
 
 import { MessageSquare, Trash2 } from "lucide-react";
 import { usePollStore } from "@/store/usePollStore";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 const PLATFORM_COLOR: Record<string, string> = {
   twitch: "text-purple-400",
@@ -10,6 +11,7 @@ const PLATFORM_COLOR: Record<string, string> = {
 };
 
 export function ChatLog() {
+  const { t } = useTranslation();
   const { chatLog, clearLog } = usePollStore();
 
   return (
@@ -17,14 +19,14 @@ export function ChatLog() {
       <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800 shrink-0">
         <div className="flex items-center gap-2">
           <MessageSquare size={17} className="text-indigo-400" />
-          <span className="text-white font-semibold text-sm">Chat</span>
+          <span className="text-white font-semibold text-sm">{t("chatLog.titulo")}</span>
         </div>
         <button
           onClick={clearLog}
           className="flex items-center gap-1.5 text-zinc-500 hover:text-red-400 text-xs transition-colors"
         >
           <Trash2 size={13} />
-          Limpar
+          {t("common.limpar")}
         </button>
       </div>
 
@@ -34,8 +36,8 @@ export function ChatLog() {
             <div className="w-16 h-16 rounded-full bg-zinc-800/60 flex items-center justify-center">
               <MessageSquare size={26} className="text-indigo-500/70" />
             </div>
-            <p className="text-zinc-300 text-sm font-medium">Sem mensagens ainda</p>
-            <p className="text-zinc-600 text-xs">As mensagens do chat aparecerão aqui.</p>
+            <p className="text-zinc-300 text-sm font-medium">{t("chatLog.semMensagens")}</p>
+            <p className="text-zinc-600 text-xs">{t("chatLog.mensagensAparecerao")}</p>
           </div>
         ) : (
           chatLog.map((msg, i) => (
@@ -43,7 +45,7 @@ export function ChatLog() {
               <span className={`font-medium shrink-0 ${PLATFORM_COLOR[msg.platform] ?? "text-zinc-400"}`}>
                 {msg.username}
               </span>
-              <span className="text-zinc-300 break-words">{msg.text}</span>
+              <span className="text-zinc-300 min-w-0 break-words">{msg.text}</span>
             </div>
           ))
         )}

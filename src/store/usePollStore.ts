@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { Poll, PollResult, PollTemplate, ChatMessage } from "@/lib/poll/types";
 import { createPoll, processVote, endPoll, serializePoll } from "@/lib/poll/engine";
+import { translate } from "@/lib/i18n/useTranslation";
 
 export type ConnectionStatus = "disconnected" | "connecting" | "connected" | "error";
 export type ChatPlatform = "twitch" | "youtube" | "kick";
@@ -45,7 +46,10 @@ export const EMPTY_KICK_BOT: KickBotAuth = {
   expiresAt: 0,
 };
 
+export type Locale = "pt" | "en";
+
 export interface Settings {
+  locale: Locale;
   overlayPort: number;
   autoConnectTwitch: boolean;
   autoConnectYouTube: boolean;
@@ -59,6 +63,7 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+  locale: "pt",
   overlayPort: 9898,
   autoConnectTwitch: false,
   autoConnectYouTube: false,
@@ -141,7 +146,7 @@ export const usePollStore = create<PollStore>((set, get) => ({
   setPollsDataLoaded: () => set({ pollsDataLoaded: true }),
 
   setConnectionStatus: (platform, status) => {
-    console.log(`[connection] ${platform} -> ${status}`);
+    console.log(translate("log.connectionStatus", { platform, status }));
     set((state) => ({
       connections: { ...state.connections, [platform]: status },
     }));
@@ -152,7 +157,14 @@ export const usePollStore = create<PollStore>((set, get) => ({
   startPoll: (question, labels, durationSec, uniqueVotes) => {
     cancelAutoClear();
     const poll = createPoll(question, labels, durationSec, uniqueVotes);
-    console.log(`[poll] iniciada: "${question}" opções=${JSON.stringify(labels)} duração=${durationSec}s votoÚnico=${uniqueVotes}`);
+    console.log(
+      translate("log.pollStarted", {
+        question,
+        options: JSON.stringify(labels),
+        duration: durationSec,
+        unique: String(uniqueVotes),
+      })
+    );
     set({ poll, lastResult: null });
     get().onOverlayUpdate?.(JSON.stringify({ type: "poll_update", data: serializePoll(poll) }));
   },
@@ -162,7 +174,11 @@ export const usePollStore = create<PollStore>((set, get) => ({
     if (!poll) return;
     const result = endPoll(poll);
     console.log(
-      `[poll] encerrada: "${poll.question}" vencedor=${result.winner?.label ?? "(sem votos)"} totalVotos=${result.totalVotes}`
+      translate("log.pollEnded", {
+        question: poll.question,
+        winner: result.winner?.label ?? translate("log.pollEndedNoWinner"),
+        total: result.totalVotes,
+      })
     );
     set((state) => ({
       poll: { ...poll, status: "ended" },
@@ -182,7 +198,7 @@ export const usePollStore = create<PollStore>((set, get) => ({
 
   clearCurrentPoll: () => {
     cancelAutoClear();
-    console.log("[poll] prévia/overlay limpos");
+    console.log(translate("log.pollCleared"));
     set({ poll: null, lastResult: null });
     get().onOverlayUpdate?.(JSON.stringify({ type: "poll_cleared", data: null }));
   },
@@ -218,7 +234,7 @@ export const usePollStore = create<PollStore>((set, get) => ({
   clearLog: () => set({ chatLog: [] }),
 
   saveTemplate: (template) => {
-    console.log(`[template] salvo: "${template.question}"`);
+    console.log(translate("log.templateSaved", { question: template.question }));
     set((state) => ({
       templates: [
         { ...template, id: `tpl-${Date.now()}`, createdAt: Date.now() },
@@ -228,22 +244,22 @@ export const usePollStore = create<PollStore>((set, get) => ({
   },
 
   deleteTemplate: (id) => {
-    console.log(`[template] removido: ${id}`);
+    console.log(translate("log.templateDeleted", { id }));
     set((state) => ({ templates: state.templates.filter((t) => t.id !== id) }));
   },
 
   deleteHistoryEntry: (pollId) => {
-    console.log(`[history] entrada removida: ${pollId}`);
+    console.log(translate("log.historyEntryDeleted", { id: pollId }));
     set((state) => ({ history: state.history.filter((h) => h.poll.id !== pollId) }));
   },
 
   clearHistory: () => {
-    console.log("[history] histórico limpo");
+    console.log(translate("log.historyCleared"));
     set({ history: [] });
   },
 
   resetAllData: () => {
-    console.log("[settings] todos os dados do app foram resetados");
+    console.log(translate("log.allDataReset"));
     set({ settings: DEFAULT_SETTINGS, templates: [], history: [] });
   },
 }));

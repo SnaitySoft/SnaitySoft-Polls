@@ -2,9 +2,10 @@
 
 import { History, Trash2 } from "lucide-react";
 import { usePollStore } from "@/store/usePollStore";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
-function formatDate(ts: number) {
-  return new Date(ts).toLocaleString("pt-BR", {
+function formatDate(ts: number, locale: "pt" | "en") {
+  return new Date(ts).toLocaleString(locale === "pt" ? "pt-BR" : "en-US", {
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",
@@ -13,21 +14,22 @@ function formatDate(ts: number) {
 }
 
 export function PollHistory() {
+  const { t, locale } = useTranslation();
   const { history, deleteHistoryEntry, clearHistory } = usePollStore();
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-white font-semibold text-xl">Histórico</h2>
-          <p className="text-zinc-500 text-sm mt-0.5">Polls já encerradas e seus resultados.</p>
+          <h2 className="text-white font-semibold text-xl">{t("pollHistory.titulo")}</h2>
+          <p className="text-zinc-500 text-sm mt-0.5">{t("pollHistory.descricao")}</p>
         </div>
         {history.length > 0 && (
           <button
             onClick={clearHistory}
             className="text-xs px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 transition-colors"
           >
-            Limpar tudo
+            {t("pollHistory.limparTudo")}
           </button>
         )}
       </div>
@@ -35,8 +37,8 @@ export function PollHistory() {
       {history.length === 0 ? (
         <div className="bg-zinc-900 rounded-xl p-10 border border-zinc-700 flex flex-col items-center justify-center text-center gap-2">
           <History size={32} className="text-zinc-700" />
-          <p className="text-zinc-400 text-sm font-medium">Nenhuma poll encerrada ainda</p>
-          <p className="text-zinc-600 text-xs">O resultado de cada poll encerrada aparece aqui.</p>
+          <p className="text-zinc-400 text-sm font-medium">{t("pollHistory.nenhumaPoll")}</p>
+          <p className="text-zinc-600 text-xs">{t("pollHistory.resultadoApareceAqui")}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -45,12 +47,12 @@ export function PollHistory() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-white font-medium text-sm truncate">{entry.poll.question}</p>
-                  <p className="text-zinc-600 text-xs mt-0.5">{formatDate(entry.poll.startedAt)}</p>
+                  <p className="text-zinc-600 text-xs mt-0.5">{formatDate(entry.poll.startedAt, locale)}</p>
                 </div>
                 <button
                   onClick={() => deleteHistoryEntry(entry.poll.id)}
                   className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-zinc-800 transition-colors shrink-0"
-                  title="Excluir do histórico"
+                  title={t("pollHistory.excluirTitle")}
                 >
                   <Trash2 size={15} />
                 </button>
@@ -62,12 +64,14 @@ export function PollHistory() {
                   const isWinner = entry.winner?.id === opt.id;
                   return (
                     <div key={opt.id}>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className={isWinner ? "text-indigo-300 font-medium" : "text-zinc-400"}>
+                      <div className="flex justify-between gap-2 text-xs mb-1">
+                        <span
+                          className={`min-w-0 break-words ${isWinner ? "text-indigo-300 font-medium" : "text-zinc-400"}`}
+                        >
                           {opt.label}
                           {isWinner && " 🏆"}
                         </span>
-                        <span className="text-zinc-500 tabular-nums">
+                        <span className="text-zinc-500 tabular-nums shrink-0">
                           {opt.votes} ({pct}%)
                         </span>
                       </div>
@@ -83,7 +87,7 @@ export function PollHistory() {
               </div>
 
               <p className="text-zinc-600 text-xs text-right mt-2">
-                {entry.totalVotes} voto{entry.totalVotes !== 1 ? "s" : ""}
+                {entry.totalVotes} {t(entry.totalVotes !== 1 ? "common.votoPlural" : "common.votoSingular")}
               </p>
             </div>
           ))}

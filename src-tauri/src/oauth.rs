@@ -56,7 +56,7 @@ impl OAuthCoordinator {
         let result = match (&params.state, &params.code, &params.error) {
             (Some(s), Some(code), _) if *s == pending.state => Ok(code.clone()),
             (_, _, Some(err)) => Err(err.clone()),
-            _ => Err("callback inválido".to_string()),
+            _ => Err("error.callback_invalid".to_string()),
         };
 
         let ok = result.is_ok();
@@ -93,13 +93,13 @@ async fn await_code(rx: oneshot::Receiver<Result<String, String>>) -> Result<Str
     match tokio::time::timeout(Duration::from_secs(120), rx).await {
         Ok(Ok(Ok(code))) => Ok(code),
         Ok(Ok(Err(e))) => Err(e),
-        Ok(Err(_)) => Err("canal de callback fechado".to_string()),
-        Err(_) => Err("tempo esgotado aguardando autorização".to_string()),
+        Ok(Err(_)) => Err("error.callback_channel_closed".to_string()),
+        Err(_) => Err("error.auth_timeout".to_string()),
     }
 }
 
 fn env_var(name: &str) -> Result<String, String> {
-    std::env::var(name).map_err(|_| format!("{name} não configurado no .env do app"))
+    std::env::var(name).map_err(|_| format!("error.env_var_missing|{name}"))
 }
 
 /// Sends the request and parses the JSON body, surfacing the provider's own error
@@ -207,7 +207,7 @@ pub async fn twitch_oauth_device_poll(
 
     let token: TwitchTokenResponse = loop {
         if tokio::time::Instant::now() >= deadline {
-            return Err("tempo esgotado aguardando autorização".to_string());
+            return Err("error.auth_timeout".to_string());
         }
         tokio::time::sleep(poll_delay).await;
 
@@ -246,7 +246,7 @@ pub async fn twitch_oauth_device_poll(
         .into_iter()
         .next()
         .map(|u| u.login)
-        .ok_or_else(|| "não foi possível identificar o usuário do bot".to_string())?;
+        .ok_or_else(|| "error.bot_user_not_identified".to_string())?;
 
     Ok(TwitchBotLogin {
         username,
@@ -354,7 +354,7 @@ pub async fn kick_oauth_login(
         .data
         .into_iter()
         .next()
-        .ok_or_else(|| "não foi possível identificar o usuário do bot".to_string())?;
+        .ok_or_else(|| "error.bot_user_not_identified".to_string())?;
 
     Ok(KickBotLogin {
         username: user.name,

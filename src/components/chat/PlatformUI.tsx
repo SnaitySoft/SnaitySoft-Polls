@@ -1,4 +1,5 @@
 import { ConnectionStatus } from "@/store/usePollStore";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export function StatusDot({ status }: { status: ConnectionStatus }) {
   const color =
@@ -12,11 +13,15 @@ export function StatusDot({ status }: { status: ConnectionStatus }) {
   return <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${color}`} />;
 }
 
-export function statusLabel(status: ConnectionStatus, connectedAs: string) {
-  if (status === "connected") return connectedAs || "Conectado";
-  if (status === "connecting") return "Conectando…";
-  if (status === "error") return "Erro na conexão";
-  return "Desconectado";
+export function statusLabel(
+  status: ConnectionStatus,
+  connectedAs: string,
+  t: ReturnType<typeof useTranslation>["t"]
+) {
+  if (status === "connected") return connectedAs || t("platform.conectado");
+  if (status === "connecting") return t("platform.conectando");
+  if (status === "error") return t("platform.erroConexao");
+  return t("platform.desconectado");
 }
 
 export function PlatformBadge({

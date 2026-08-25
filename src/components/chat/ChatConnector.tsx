@@ -6,6 +6,7 @@ import { ChatConnectionActions } from "@/hooks/useChatConnections";
 import { Toggle } from "@/components/ui/Toggle";
 import { TwitchIcon, YouTubeIcon, KickIcon } from "@/components/icons/BrandIcons";
 import { StatusDot, statusLabel, PlatformBadge } from "@/components/chat/PlatformUI";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 function PlatformRow({
   badge,
@@ -32,6 +33,7 @@ function PlatformRow({
   onOpenConnections: () => void;
   connectClass: string;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-2.5 min-w-0">
@@ -40,22 +42,22 @@ function PlatformRow({
           <p className="text-zinc-200 font-medium text-sm">{label}</p>
           <div className="flex items-center gap-1.5">
             <StatusDot status={status} />
-            <span className="text-zinc-500 text-xs truncate">{statusLabel(status, connectedAs)}</span>
+            <span className="text-zinc-500 text-xs truncate">{statusLabel(status, connectedAs, t)}</span>
           </div>
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <span className="text-zinc-500 text-xs">Auto</span>
+        <span className="text-zinc-500 text-xs">{t("chatConnector.auto")}</span>
         <Toggle
           enabled={autoEnabled}
           onChange={onToggleAuto}
           disabled={!canConnect}
           title={
             !canConnect
-              ? "Conecte o bot em Conexões primeiro"
+              ? t("chatConnector.conecteBotPrimeiro")
               : autoEnabled
-              ? "Auto-conectar ativado"
-              : "Auto-conectar desativado"
+              ? t("chatConnector.autoConectarAtivado")
+              : t("chatConnector.autoConectarDesativado")
           }
         />
         {status === "connected" ? (
@@ -63,7 +65,7 @@ function PlatformRow({
             onClick={onDisconnect}
             className="text-xs px-3 py-1 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-zinc-300 transition-colors"
           >
-            Desconectar
+            {t("common.desconectar")}
           </button>
         ) : (
           <button
@@ -71,12 +73,12 @@ function PlatformRow({
             disabled={!canConnect || status === "connecting"}
             className={`text-xs px-3 py-1 rounded-lg text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${connectClass}`}
           >
-            {status === "connecting" ? "Conectando…" : "Conectar"}
+            {status === "connecting" ? t("common.conectando") : t("common.conectar")}
           </button>
         )}
         <button
           onClick={onOpenConnections}
-          title="Configurar bot em Conexões"
+          title={t("chatConnector.configurarBotTitle")}
           className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
         >
           <SettingsIcon size={15} />
@@ -93,6 +95,7 @@ export function ChatConnector({
   actions: ChatConnectionActions;
   onOpenConnections: () => void;
 }) {
+  const { t } = useTranslation();
   const { settings, connections } = usePollStore();
 
   const canConnectTwitch = !!settings.twitchBot.refreshToken;
@@ -104,9 +107,9 @@ export function ChatConnector({
       <div>
         <div className="flex items-center gap-2">
           <Link2 size={17} className="text-indigo-400" />
-          <h2 className="text-white font-semibold text-lg">Conexões de Chat</h2>
+          <h2 className="text-white font-semibold text-lg">{t("chatConnector.titulo")}</h2>
         </div>
-        <p className="text-zinc-500 text-sm mt-0.5">Conecte seus canais para receber votos e interagir.</p>
+        <p className="text-zinc-500 text-sm mt-0.5">{t("chatConnector.descricao")}</p>
       </div>
 
       <PlatformRow
@@ -153,8 +156,9 @@ export function ChatConnector({
 
       {(!canConnectTwitch || !canConnectYouTube || !canConnectKick) && (
         <p className="text-zinc-600 text-xs">
-          Conecte o bot em <span className="text-zinc-400">Conexões</span> para habilitar a conexão e o
-          auto-conectar.
+          {t("chatConnector.conecteEmConexoesPrefixo")}{" "}
+          <span className="text-zinc-400">{t("sidebar.conexoes")}</span>{" "}
+          {t("chatConnector.conecteEmConexoesSufixo")}
         </p>
       )}
     </div>

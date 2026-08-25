@@ -26,7 +26,7 @@ fn find_between(haystack: &str, prefix: &str) -> Option<String> {
 async fn fetch_page(http: &reqwest::Client, url: &str) -> Result<String, String> {
     let res = http.get(url).send().await.map_err(|e| e.to_string())?;
     if !res.status().is_success() {
-        return Err(format!("HTTP {} ao buscar {url}", res.status()));
+        return Err(format!("error.youtube.fetch_failed|{}", res.status()));
     }
     res.text().await.map_err(|e| e.to_string())
 }
@@ -45,7 +45,7 @@ async fn resolve_watch_html(http: &reqwest::Client, input: &str) -> Result<Strin
 
     let trimmed = input.trim();
     if !trimmed.contains("youtube.com") && !trimmed.contains("youtu.be") {
-        return Err("Não consegui reconhecer essa URL/ID de live do YouTube".to_string());
+        return Err("error.youtube.url_not_recognized".to_string());
     }
     let normalized = if trimmed.starts_with("http") {
         trimmed.to_string()
@@ -54,7 +54,7 @@ async fn resolve_watch_html(http: &reqwest::Client, input: &str) -> Result<Strin
     };
     let html = fetch_page(http, &normalized).await?;
     let video_id = find_between(&html, "\"videoId\":\"")
-        .ok_or_else(|| "Não consegui reconhecer essa URL/ID de live do YouTube".to_string())?;
+        .ok_or_else(|| "error.youtube.url_not_recognized".to_string())?;
     fetch_page(http, &format!("https://www.youtube.com/watch?v={video_id}")).await
 }
 
@@ -102,16 +102,15 @@ pub async fn youtube_scrape_start(live_url: String) -> Result<YoutubeScrapeStart
     let html = resolve_watch_html(&http, &live_url).await?;
 
     if html.contains("\"isReplay\":true") {
-        return Err("Essa transmissão não está mais ao vivo".to_string());
+        return Err("error.youtube.stream_ended".to_string());
     }
 
     let api_key = find_between(&html, "\"INNERTUBE_API_KEY\":\"")
-        .ok_or_else(|| "Falha ao ler a página da live (api key)".to_string())?;
+        .ok_or_else(|| "error.youtube.missing_api_key".to_string())?;
     let client_version = find_between(&html, "\"clientVersion\":\"")
-        .ok_or_else(|| "Falha ao ler a página da live (clientVersion)".to_string())?;
-    let continuation = find_between(&html, "\"continuation\":\"").ok_or_else(|| {
-        "Não achei o chat dessa live — o chat pode estar desativado nessa transmissão".to_string()
-    })?;
+        .ok_or_else(|| "error.youtube.missing_client_version".to_string())?;
+    let continuation =
+        find_between(&html, "\"continuation\":\"").ok_or_else(|| "error.youtube.chat_not_found".to_string())?;
 
     Ok(YoutubeScrapeStart {
         api_key,
@@ -156,7 +155,7 @@ pub async fn youtube_scrape_poll(
         .map_err(|e| e.to_string())?;
 
     if !res.status().is_success() {
-        return Err(format!("HTTP {} do YouTube", res.status()));
+        return Err(format!("error.youtube.poll_http_error|{}", res.status()));
     }
 
     let data: Value = res.json().await.map_err(|e| e.to_string())?;

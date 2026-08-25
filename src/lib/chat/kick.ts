@@ -1,4 +1,5 @@
 import { ChatMessage } from "@/lib/poll/types";
+import { translate } from "@/lib/i18n/useTranslation";
 
 // Kick's official API only delivers incoming chat messages via webhooks, which need a
 // public HTTPS URL — not viable for a local desktop app. Reading instead uses the same
@@ -125,7 +126,7 @@ export class KickChatConnector {
     try {
       const accessToken = await this.getAccessToken();
       if (!accessToken) {
-        console.error("[kick] say() abortado: sem access token válido (bot desconectado ou refresh falhou)");
+        console.error(translate("log.kickSayNoToken"));
         return;
       }
 
@@ -144,11 +145,13 @@ export class KickChatConnector {
 
       if (!res.ok) {
         const body = await res.text().catch(() => "");
-        console.error(`[kick] say() falhou: HTTP ${res.status} ${res.statusText} — ${body}`);
+        console.error(
+          translate("log.kickSayHttpError", { status: res.status, statusText: res.statusText, body })
+        );
       }
     } catch (e) {
       // best-effort — chat announcement failures shouldn't break the poll flow
-      console.error("[kick] say() lançou uma exceção:", e);
+      console.error(translate("log.kickSayException"), e);
     }
   }
 }

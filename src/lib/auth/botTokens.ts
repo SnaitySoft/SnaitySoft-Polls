@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { usePollStore } from "@/store/usePollStore";
+import { translate } from "@/lib/i18n/useTranslation";
 
 const REFRESH_MARGIN_MS = 60_000;
 
@@ -51,7 +52,7 @@ export async function getValidKickBotToken(): Promise<string | null> {
     setSettings({ kickBot: updated });
     return updated.accessToken;
   } catch (e) {
-    console.error("[kick] falha ao renovar token do bot:", e);
+    console.error(translate("log.kickTokenRefreshFailed"), e);
     return null;
   }
 }

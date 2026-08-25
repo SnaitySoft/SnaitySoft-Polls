@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { CopyButton } from "@/components/ui/CopyButton";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 function Step({
   number,
@@ -27,6 +28,7 @@ function Step({
 }
 
 export function OverlayGuide() {
+  const { t } = useTranslation();
   const [port, setPort] = useState(9898);
   const [open, setOpen] = useState(false);
 
@@ -47,20 +49,18 @@ export function OverlayGuide() {
       >
         <div className="flex items-center gap-2.5">
           <span className="text-base">🎬</span>
-          <span className="text-white font-semibold text-sm">
-            Configurar Overlay no OBS
-          </span>
+          <span className="text-white font-semibold text-sm">{t("overlayGuide.titulo")}</span>
         </div>
-        <span className="text-zinc-500 text-xs">{open ? "▲ Fechar" : "▼ Ver instruções"}</span>
+        <span className="text-zinc-500 text-xs">
+          {open ? t("overlayGuide.fechar") : t("overlayGuide.verInstrucoes")}
+        </span>
       </button>
 
       {open && (
         <div className="px-5 pb-5 space-y-5 border-t border-zinc-800 pt-4">
           {/* URL destaque */}
           <div className="bg-zinc-800 rounded-lg p-3">
-            <p className="text-zinc-400 text-xs mb-2">
-              Endereço do overlay — copie e cole no OBS:
-            </p>
+            <p className="text-zinc-400 text-xs mb-2">{t("overlayGuide.enderecoLabel")}</p>
             <div className="flex items-center gap-2">
               <code className="flex-1 text-indigo-300 font-mono text-sm select-all bg-zinc-900 px-3 py-2 rounded-md truncate">
                 {overlayUrl}
@@ -71,23 +71,16 @@ export function OverlayGuide() {
 
           {/* Passos */}
           <div className="space-y-4">
-            <Step number={1} title="Abra o OBS Studio">
-              <p>Certifique-se que o SnaitySoft Polls está aberto e com uma poll ativa ou encerrada.</p>
+            <Step number={1} title={t("overlayGuide.step1Titulo")}>
+              <p>{t("overlayGuide.step1Corpo")}</p>
             </Step>
 
-            <Step number={2} title='Adicione uma "Browser Source"'>
-              <p>
-                Na seção <strong className="text-zinc-300">Fontes</strong>, clique em{" "}
-                <strong className="text-zinc-300">+</strong> e escolha{" "}
-                <strong className="text-zinc-300">Navegador</strong>{" "}
-                (ou <em>Browser Source</em>).
-              </p>
+            <Step number={2} title={t("overlayGuide.step2Titulo")}>
+              <p>{t("overlayGuide.step2Corpo")}</p>
             </Step>
 
-            <Step number={3} title="Cole o endereço">
-              <p>
-                No campo <strong className="text-zinc-300">URL</strong>, cole:
-              </p>
+            <Step number={3} title={t("overlayGuide.step3Titulo")}>
+              <p>{t("overlayGuide.step3Corpo")}</p>
               <div className="flex items-center gap-2 mt-1.5">
                 <code className="text-indigo-300 font-mono text-xs bg-zinc-900 px-2 py-1 rounded">
                   {overlayUrl}
@@ -96,52 +89,31 @@ export function OverlayGuide() {
               </div>
             </Step>
 
-            <Step number={4} title="Configure o tamanho recomendado">
-              <p>
-                Largura: <strong className="text-zinc-300">700</strong> px — funciona pra
-                qualquer quantidade de opções.
-              </p>
-              <p className="mt-1">
-                Altura: <strong className="text-zinc-300">320</strong> px pra poll com 2 opções,
-                até <strong className="text-zinc-300">650</strong> px se usar o máximo de 10
-                (cada opção soma uns 45px).
-              </p>
-              <p className="text-zinc-500 text-xs mt-0.5">
-                Se não souber o número exato, use 650px de altura — o overlay só ocupa o espaço
-                que precisa, sobrando área transparente embaixo.
-              </p>
+            <Step number={4} title={t("overlayGuide.step4Titulo")}>
+              <p>{t("overlayGuide.step4Largura", { largura: 700 })}</p>
+              <p className="mt-1">{t("overlayGuide.step4Altura", { min: 320, max: 650 })}</p>
+              <p className="text-zinc-500 text-xs mt-0.5">{t("overlayGuide.step4Dica")}</p>
             </Step>
 
-            <Step number={5} title="Ative o fundo transparente (opcional)">
-              <p>
-                Marque a opção{" "}
-                <strong className="text-zinc-300">Usar fundo transparente</strong>{" "}
-                para o overlay aparecer sem caixa preta — ideal para sobrepor à sua câmera ou jogo.
-              </p>
+            <Step number={5} title={t("overlayGuide.step5Titulo")}>
+              <p>{t("overlayGuide.step5Corpo")}</p>
             </Step>
 
-            <Step number={6} title="Clique em OK e posicione na cena">
-              <p>
-                Arraste o overlay para onde quiser na cena. Ele atualiza automaticamente
-                a cada voto recebido no chat.
-              </p>
+            <Step number={6} title={t("overlayGuide.step6Titulo")}>
+              <p>{t("overlayGuide.step6Corpo")}</p>
             </Step>
           </div>
 
           {/* Dicas */}
           <div className="bg-zinc-800/60 rounded-lg p-3 space-y-2">
             <p className="text-zinc-300 text-xs font-semibold uppercase tracking-wide">
-              Dicas
+              {t("overlayGuide.dicasTitulo")}
             </p>
             <ul className="text-zinc-400 text-xs space-y-1.5 list-none">
+              <li>✅ {t("overlayGuide.dica1")}</li>
+              <li>✅ {t("overlayGuide.dica2")}</li>
               <li>
-                ✅ O overlay funciona enquanto o SnaitySoft Polls estiver aberto no computador.
-              </li>
-              <li>
-                ✅ Se o OBS perder a conexão, ele reconecta sozinho em até 2 segundos.
-              </li>
-              <li>
-                ✅ Você pode abrir{" "}
+                ✅ {t("overlayGuide.dica3Prefixo")}{" "}
                 <a
                   href={overlayUrl}
                   target="_blank"
@@ -150,11 +122,11 @@ export function OverlayGuide() {
                 >
                   {overlayUrl}
                 </a>{" "}
-                no navegador para prévia de como vai aparecer.
+                {t("overlayGuide.dica3Sufixo")}
               </li>
               <li>
-                ⚠️ A porta <strong className="text-zinc-300">{port}</strong> precisa estar
-                livre no seu computador. Se não funcionar, reinicie o app.
+                ⚠️ {t("overlayGuide.dica4Prefixo")} <strong className="text-zinc-300">{port}</strong>{" "}
+                {t("overlayGuide.dica4Sufixo")}
               </li>
             </ul>
           </div>

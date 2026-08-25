@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { ChatMessage } from "@/lib/poll/types";
+import { translate } from "@/lib/i18n/useTranslation";
 
 interface YoutubeScrapeStart {
   apiKey: string;
@@ -67,7 +68,7 @@ export class YouTubeChatConnector {
       this.onStatusChange("connected");
       this.schedulePoll(0);
     } catch (e) {
-      console.error("[youtube] falha ao conectar:", e);
+      console.error(translate("log.youtubeConnectFailed"), e);
       this.onStatusChange("error");
       throw e;
     }
@@ -108,7 +109,7 @@ export class YouTubeChatConnector {
 
       this.schedulePoll(3000);
     } catch (e) {
-      console.error("[youtube] falha ao buscar mensagens do chat (scrape):", e);
+      console.error(translate("log.youtubePollFailed"), e);
       if (this.running) this.schedulePoll(5000); // retry on error
     }
   }

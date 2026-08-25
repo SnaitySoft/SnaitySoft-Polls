@@ -4,15 +4,17 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { SquarePlus, ListChecks, History, Link2, Settings } from "lucide-react";
 import { CopyButton } from "@/components/ui/CopyButton";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import { TranslationKey } from "@/lib/i18n/pt";
 
 export type NavSection = "nova-poll" | "minhas-polls" | "historico" | "conexoes" | "configuracoes";
 
-const NAV_ITEMS: { id: NavSection; label: string; icon: React.ElementType }[] = [
-  { id: "nova-poll", label: "Nova Poll", icon: SquarePlus },
-  { id: "minhas-polls", label: "Minhas Polls", icon: ListChecks },
-  { id: "historico", label: "Histórico", icon: History },
-  { id: "conexoes", label: "Conexões", icon: Link2 },
-  { id: "configuracoes", label: "Configurações", icon: Settings },
+const NAV_ITEMS: { id: NavSection; labelKey: TranslationKey; icon: React.ElementType }[] = [
+  { id: "nova-poll", labelKey: "sidebar.novaPoll", icon: SquarePlus },
+  { id: "minhas-polls", labelKey: "sidebar.minhasPolls", icon: ListChecks },
+  { id: "historico", labelKey: "sidebar.historico", icon: History },
+  { id: "conexoes", labelKey: "sidebar.conexoes", icon: Link2 },
+  { id: "configuracoes", labelKey: "sidebar.configuracoes", icon: Settings },
 ];
 
 export function Sidebar({
@@ -22,6 +24,7 @@ export function Sidebar({
   active: NavSection;
   onChange: (section: NavSection) => void;
 }) {
+  const { t } = useTranslation();
   const [port, setPort] = useState(9898);
 
   useEffect(() => {
@@ -55,14 +58,14 @@ export function Sidebar({
               }`}
             >
               <Icon size={17} className="shrink-0" />
-              {item.label}
+              {t(item.labelKey)}
             </button>
           );
         })}
       </nav>
 
       <div className="px-4 py-4 border-t border-zinc-800 space-y-1.5">
-        <p className="text-zinc-500 text-xs">Overlay rodando em</p>
+        <p className="text-zinc-500 text-xs">{t("sidebar.overlayRodandoEm")}</p>
         <div className="flex items-center gap-1.5">
           <code className="flex-1 min-w-0 text-indigo-300 font-mono text-xs truncate">{overlayUrl}</code>
           <CopyButton

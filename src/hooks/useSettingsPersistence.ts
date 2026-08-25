@@ -4,10 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { usePollStore } from "@/store/usePollStore";
 import { loadSettings, saveSettings } from "@/lib/settings/persistence";
 import { useToastStore } from "@/store/useToastStore";
+import { useTranslation, translate, detectSystemLocale } from "@/lib/i18n/useTranslation";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export function useSettingsPersistence() {
+  const { t } = useTranslation();
   const { settings, setSettings, setSettingsLoaded } = usePollStore();
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [loaded, setLoaded] = useState(false);
@@ -18,8 +20,17 @@ export function useSettingsPersistence() {
   useEffect(() => {
     loadSettings()
       .then((saved) => {
-        if (Object.keys(saved).length > 0) setSettings(saved);
-        console.log(`[settings] carregadas do disco (${Object.keys(saved).length} campos)`);
+        // No saved locale (fresh install, or an older settings.json from before locale
+        // existed) — detect it from the OS instead of silently keeping the hardcoded "pt"
+        // default. Merged in unconditionally so this also covers a truly empty store (saved
+        // === {}), which the old `if (Object.keys(saved).length > 0)` guard would've skipped
+        // entirely, never giving detection a chance to run.
+        const merged = saved.locale ? saved : { ...saved, locale: detectSystemLocale() };
+        setSettings(merged);
+        // translate(), not t() — t's closure was captured at mount, before this async load
+        // resolved and (possibly) changed the locale; translate() reads the store fresh, so
+        // it reflects the just-loaded locale instead of always printing in the previous one.
+        console.log(translate("log.settingsLoaded", { count: Object.keys(merged).length }));
       })
       .finally(() => {
         setLoaded(true);
@@ -44,21 +55,22 @@ export function useSettingsPersistence() {
       } catch {
         setStatus("error");
         setTimeout(() => setStatus("idle"), 3000);
-        useToastStore.getState().pushToast("Falha ao salvar configurações", "error");
+        useToastStore.getState().pushToast(t("toast.falhaSalvarConfiguracoes"), "error");
       }
     }, 800);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [settings, loaded]);
+  }, [settings, loaded, t]);
 
   return { loaded, status };
 }
 
 export function useSaveStatus(status: SaveStatus) {
-  if (status === "saving") return { label: "Salvando…", color: "text-zinc-400" };
-  if (status === "saved") return { label: "Salvo", color: "text-green-400" };
-  if (status === "error") return { label: "Erro ao salvar", color: "text-red-400" };
+  const { t } = useTranslation();
+  if (status === "saving") return { label: t("settings.saveStatusSaving"), color: "text-zinc-400" };
+  if (status === "saved") return { label: t("settings.saveStatusSaved"), color: "text-green-400" };
+  if (status === "error") return { label: t("settings.saveStatusError"), color: "text-red-400" };
   return { label: "", color: "" };
 }

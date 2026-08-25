@@ -8,8 +8,39 @@ import { YouTubeChatConnector } from "@/lib/chat/youtube";
 import { KickChatConnector } from "@/lib/chat/kick";
 import { getValidTwitchBotToken, getValidKickBotToken } from "@/lib/auth/botTokens";
 import { useToastStore } from "@/store/useToastStore";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+import { PollOption } from "@/lib/poll/types";
 
 const PLATFORM_LABEL: Record<ChatPlatform, string> = { twitch: "Twitch", youtube: "YouTube", kick: "Kick" };
+
+// Twitch's IRC PRIVMSG limit and Kick's documented POST /public/v1/chat "content" field both
+// cap at 500 characters — this margin leaves room for encoding differences (unicode/emoji
+// byte-length vs character count) rather than cutting it exactly at the wire.
+const MAX_ANNOUNCE_LENGTH = 480;
+
+type TFn = ReturnType<typeof useTranslation>["t"];
+
+function hardTruncate(message: string): string {
+  return message.length > MAX_ANNOUNCE_LENGTH ? message.slice(0, MAX_ANNOUNCE_LENGTH - 1) + "…" : message;
+}
+
+// With up to 10 options and no length cap on option text, the naive "1) label 2) label..."
+// list can blow past the platform limit — drop trailing options (replaced by a "+N more"
+// count) until it fits, and hard-truncate as a last resort if even the question plus a
+// single option doesn't fit.
+function buildPollStartedAnnounce(question: string, options: PollOption[], t: TFn): string {
+  for (let hidden = 0; hidden <= options.length; hidden++) {
+    const visible = hidden === 0 ? options : options.slice(0, options.length - hidden);
+    const optionsList =
+      visible.map((o, i) => `${i + 1}) ${o.label}`).join("  ") +
+      (hidden > 0 ? `  ${t("announce.moreOptions", { n: hidden })}` : "");
+    const message = t("announce.pollStarted", { question, options: optionsList });
+    if (message.length <= MAX_ANNOUNCE_LENGTH || visible.length <= 1) {
+      return hardTruncate(message);
+    }
+  }
+  return hardTruncate(t("announce.pollStarted", { question, options: "" }));
+}
 
 interface TwitchDeviceStart {
   userCode: string;
@@ -56,6 +87,7 @@ export function useChatConnections(): ChatConnectionActions {
   const { settings, settingsLoaded, setSettings, setConnectionStatus, processMessage, poll, lastResult, connections } =
     usePollStore();
   const pushToast = useToastStore((s) => s.pushToast);
+  const { t } = useTranslation();
 
   const twitchRef = useRef<TwitchChatConnector | null>(null);
   const youtubeRef = useRef<YouTubeChatConnector | null>(null);
@@ -68,11 +100,11 @@ export function useChatConnections(): ChatConnectionActions {
   useEffect(() => {
     (Object.keys(connections) as ChatPlatform[]).forEach((platform) => {
       if (connections[platform] === "error" && prevConnections.current[platform] !== "error") {
-        pushToast(`Erro na conexão com a ${PLATFORM_LABEL[platform]}`, "error");
+        pushToast(t("toast.erroConexaoCom", { platform: PLATFORM_LABEL[platform] }), "error");
       }
     });
     prevConnections.current = connections;
-  }, [connections, pushToast]);
+  }, [connections, pushToast, t]);
 
   // keep a ref to the latest settings so callbacks don't go stale
   const settingsRef = useRef(settings);
@@ -204,7 +236,7 @@ export function useChatConnections(): ChatConnectionActions {
         interval: device.interval,
         expiresIn: device.expiresIn,
       });
-      console.log(`[twitch] bot conectado: ${result.username}`);
+      console.log(t("log.twitchBotConnected", { username: result.username }));
       setSettings({
         twitchBot: {
           username: result.username,
@@ -214,27 +246,27 @@ export function useChatConnections(): ChatConnectionActions {
         },
       });
     },
-    [setSettings]
+    [setSettings, t]
   );
 
   const logoutTwitchBot = useCallback(() => {
-    console.log("[twitch] bot desconectado (logout)");
+    console.log(t("log.twitchBotDisconnected"));
     setSettings({ twitchBot: EMPTY_TWITCH_BOT });
     disconnectTwitch();
-  }, [setSettings, disconnectTwitch]);
+  }, [setSettings, disconnectTwitch, t]);
 
   const setYoutubeLiveUrl = useCallback(
     (liveUrl: string) => {
-      console.log(`[youtube] live URL configurada: ${liveUrl}`);
+      console.log(t("log.youtubeLiveUrlSet", { url: liveUrl }));
       setSettings({ youtubeConfig: { liveUrl } });
       disconnectYouTube();
     },
-    [setSettings, disconnectYouTube]
+    [setSettings, disconnectYouTube, t]
   );
 
   const loginKickBot = useCallback(async () => {
     const result = await invoke<KickLoginResult>("kick_oauth_login");
-    console.log(`[kick] bot conectado: ${result.username}`);
+    console.log(t("log.kickBotConnected", { username: result.username }));
     setSettings({
       kickBot: {
         username: result.username,
@@ -244,13 +276,13 @@ export function useChatConnections(): ChatConnectionActions {
         expiresAt: Date.now() + result.expiresIn * 1000,
       },
     });
-  }, [setSettings]);
+  }, [setSettings, t]);
 
   const logoutKickBot = useCallback(() => {
-    console.log("[kick] bot desconectado (logout)");
+    console.log(t("log.kickBotDisconnected"));
     setSettings({ kickBot: EMPTY_KICK_BOT });
     disconnectKick();
-  }, [setSettings, disconnectKick]);
+  }, [setSettings, disconnectKick, t]);
 
   // announce poll start/end in chat, on any connector currently logged in as a bot.
   // YouTube has no bot account (read-only scrape) so it's never included here.
@@ -269,9 +301,8 @@ export function useChatConnections(): ChatConnectionActions {
     if (!poll || poll.status !== "active" || announcedStartId.current === poll.id) return;
     announcedStartId.current = poll.id;
     if (!settingsRef.current.announceInChat) return;
-    const optionsList = poll.options.map((o, i) => `${i + 1}) ${o.label}`).join("  ");
-    announce(`📊 ${poll.question} — vote no chat: ${optionsList}`);
-  }, [poll]);
+    announce(buildPollStartedAnnounce(poll.question, poll.options, t));
+  }, [poll, t]);
 
   const announcedEndId = useRef<string | null>(null);
   useEffect(() => {
@@ -280,9 +311,11 @@ export function useChatConnections(): ChatConnectionActions {
     if (!settingsRef.current.announceInChat) return;
     const winnerText = lastResult.winner
       ? `${lastResult.winner.label} (${lastResult.percentages[lastResult.winner.id]}%)`
-      : "sem votos";
-    announce(`✅ Poll encerrada! Vencedor: ${winnerText} — ${lastResult.totalVotes} voto(s)`);
-  }, [lastResult]);
+      : t("announce.noVotes");
+    announce(
+      hardTruncate(t("announce.pollEnded", { winner: winnerText, total: lastResult.totalVotes }))
+    );
+  }, [lastResult, t]);
 
   return {
     connectTwitch,

@@ -1,5 +1,5 @@
 import { load, Store } from "@tauri-apps/plugin-store";
-import { Settings, TwitchBotAuth, YouTubeConfig, KickBotAuth } from "@/store/usePollStore";
+import { Settings, TwitchBotAuth, YouTubeConfig, KickBotAuth, Locale } from "@/store/usePollStore";
 
 const STORE_FILE = "settings.json";
 
@@ -15,6 +15,7 @@ export async function loadSettings(): Promise<Partial<Settings>> {
     const store = await getStore();
     const result: Partial<Settings> = {};
 
+    const locale = await store.get<Locale>("locale");
     const autoConnectTwitch = await store.get<boolean>("autoConnectTwitch");
     const autoConnectYouTube = await store.get<boolean>("autoConnectYouTube");
     const autoConnectKick = await store.get<boolean>("autoConnectKick");
@@ -25,6 +26,7 @@ export async function loadSettings(): Promise<Partial<Settings>> {
     const youtubeConfig = await store.get<YouTubeConfig>("youtubeConfig");
     const kickBot = await store.get<KickBotAuth>("kickBot");
 
+    if (locale) result.locale = locale;
     if (autoConnectTwitch != null) result.autoConnectTwitch = autoConnectTwitch;
     if (autoConnectYouTube != null) result.autoConnectYouTube = autoConnectYouTube;
     if (autoConnectKick != null) result.autoConnectKick = autoConnectKick;
@@ -43,6 +45,7 @@ export async function loadSettings(): Promise<Partial<Settings>> {
 
 export async function saveSettings(settings: Settings): Promise<void> {
   const store = await getStore();
+  await store.set("locale", settings.locale);
   await store.set("autoConnectTwitch", settings.autoConnectTwitch);
   await store.set("autoConnectYouTube", settings.autoConnectYouTube);
   await store.set("autoConnectKick", settings.autoConnectKick);

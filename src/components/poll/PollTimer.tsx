@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 import { usePollStore } from "@/store/usePollStore";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 export function PollTimer() {
+  const { t } = useTranslation();
   const { poll, endCurrentPoll } = usePollStore();
   const [remaining, setRemaining] = useState(0);
   const endedRef = useRef(false);
@@ -48,7 +50,7 @@ export function PollTimer() {
   return (
     <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-700">
       <div className="flex justify-between items-center mb-2">
-        <span className="text-zinc-400 text-xs uppercase tracking-wide">Tempo restante</span>
+        <span className="text-zinc-400 text-xs uppercase tracking-wide">{t("pollTimer.tempoRestante")}</span>
         <span
           className={`font-mono font-bold text-lg ${
             pct <= 20 ? "text-red-400" : pct <= 50 ? "text-yellow-400" : "text-green-400"

@@ -111,14 +111,21 @@ async fn kick_oauth_callback(
     oauth_callback_page(ok)
 }
 
+// This renders in the system browser (not the app's webview) after the OAuth redirect
+// completes, so it has no access to the app's Settings.locale — plumbing that through would
+// need shared state synced from the frontend for a page the user sees once per login. Shown
+// bilingually instead, which is simpler and correct regardless of the app's language.
 fn oauth_callback_page(ok: bool) -> Html<String> {
     let (title, body) = if ok {
-        ("Conectado!", "Pode fechar esta aba e voltar para o SnaitySoft Polls.")
+        ("Conectado! / Connected!", "Pode fechar esta aba e voltar para o SnaitySoft Polls.<br/>You can close this tab and go back to SnaitySoft Polls.")
     } else {
-        ("Falha na autorização", "Algo deu errado. Volte ao SnaitySoft Polls e tente novamente.")
+        (
+            "Falha na autorização / Authorization failed",
+            "Algo deu errado. Volte ao SnaitySoft Polls e tente novamente.<br/>Something went wrong. Go back to SnaitySoft Polls and try again.",
+        )
     };
     Html(format!(
-        r#"<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title>{title}</title>
+        r#"<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>{title}</title>
         <style>body{{font-family:sans-serif;background:#18181b;color:#e4e4e7;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}}
         div{{text-align:center}}</style></head>
         <body><div><h2>{title}</h2><p>{body}</p></div></body></html>"#

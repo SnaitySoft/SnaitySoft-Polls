@@ -7,6 +7,7 @@ import { PollResults } from "@/components/poll/PollResults";
 import { PollTimer } from "@/components/poll/PollTimer";
 import { PollTemplates } from "@/components/poll/PollTemplates";
 import { PollHistory } from "@/components/poll/PollHistory";
+import { RouletteView } from "@/components/roulette/RouletteView";
 import { ChatConnector } from "@/components/chat/ChatConnector";
 import { ChatLog } from "@/components/chat/ChatLog";
 import { ConnectionsView } from "@/components/connections/ConnectionsView";
@@ -60,6 +61,7 @@ export default function Home() {
 
         {section === "minhas-polls" && <PollTemplates onUse={useTemplate} />}
         {section === "historico" && <PollHistory />}
+        {section === "roleta" && <RouletteView />}
         {section === "conexoes" && <ConnectionsView actions={chatActions} />}
         {section === "configuracoes" && <SettingsPanel saveStatus={saveStatus} />}
       </main>

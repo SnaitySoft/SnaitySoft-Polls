@@ -38,7 +38,7 @@ export function OverlayGuide() {
       .catch(() => {});
   }, []);
 
-  const overlayUrl = `http://localhost:${port}`;
+  const overlayUrl = `http://localhost:${port}/?view=poll`;
 
   return (
     <div className="bg-zinc-900 rounded-xl border border-zinc-700 overflow-hidden">
@@ -128,6 +128,7 @@ export function OverlayGuide() {
                 ⚠️ {t("overlayGuide.dica4Prefixo")} <strong className="text-zinc-300">{port}</strong>{" "}
                 {t("overlayGuide.dica4Sufixo")}
               </li>
+              <li>✅ {t("overlayGuide.dica5")}</li>
             </ul>
           </div>
         </div>

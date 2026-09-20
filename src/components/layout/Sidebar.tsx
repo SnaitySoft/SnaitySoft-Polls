@@ -3,17 +3,18 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
-import { SquarePlus, ListChecks, History, Link2, Settings } from "lucide-react";
+import { SquarePlus, ListChecks, History, Link2, Settings, Dices } from "lucide-react";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { TranslationKey } from "@/lib/i18n/pt";
 
-export type NavSection = "nova-poll" | "minhas-polls" | "historico" | "conexoes" | "configuracoes";
+export type NavSection = "nova-poll" | "minhas-polls" | "historico" | "roleta" | "conexoes" | "configuracoes";
 
 const NAV_ITEMS: { id: NavSection; labelKey: TranslationKey; icon: React.ElementType }[] = [
   { id: "nova-poll", labelKey: "sidebar.novaPoll", icon: SquarePlus },
   { id: "minhas-polls", labelKey: "sidebar.minhasPolls", icon: ListChecks },
   { id: "historico", labelKey: "sidebar.historico", icon: History },
+  { id: "roleta", labelKey: "sidebar.roleta", icon: Dices },
   { id: "conexoes", labelKey: "sidebar.conexoes", icon: Link2 },
   { id: "configuracoes", labelKey: "sidebar.configuracoes", icon: Settings },
 ];
@@ -72,15 +73,28 @@ export function Sidebar({
         })}
       </nav>
 
-      <div className="px-4 py-4 border-t border-zinc-800 space-y-1.5">
-        <p className="text-zinc-500 text-xs">{t("sidebar.overlayRodandoEm")}</p>
-        <div className="flex items-center gap-1.5">
-          <code className="flex-1 min-w-0 text-indigo-300 font-mono text-xs truncate">{overlayUrl}</code>
-          <CopyButton
-            text={overlayUrl}
-            iconOnly
-            className="shrink-0 p-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-400 transition-colors"
-          />
+      <div className="px-4 py-4 border-t border-zinc-800 space-y-3">
+        <div className="space-y-1.5">
+          <p className="text-zinc-500 text-xs">{t("sidebar.overlayPoll")}</p>
+          <div className="flex items-center gap-1.5">
+            <code className="flex-1 min-w-0 text-indigo-300 font-mono text-xs truncate">{overlayUrl}/?view=poll</code>
+            <CopyButton
+              text={`${overlayUrl}/?view=poll`}
+              iconOnly
+              className="shrink-0 p-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-400 transition-colors"
+            />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-zinc-500 text-xs">{t("sidebar.overlayRoleta")}</p>
+          <div className="flex items-center gap-1.5">
+            <code className="flex-1 min-w-0 text-indigo-300 font-mono text-xs truncate">{overlayUrl}/?view=roulette</code>
+            <CopyButton
+              text={`${overlayUrl}/?view=roulette`}
+              iconOnly
+              className="shrink-0 p-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-400 transition-colors"
+            />
+          </div>
         </div>
       </div>
     </aside>

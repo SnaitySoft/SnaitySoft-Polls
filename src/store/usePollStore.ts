@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { Poll, PollResult, PollTemplate, ChatMessage } from "@/lib/poll/types";
 import { createPoll, processVote, endPoll, serializePoll } from "@/lib/poll/engine";
 import { translate } from "@/lib/i18n/useTranslation";
+import { nextOverlaySeq } from "@/lib/overlaySeq";
 
 export type ConnectionStatus = "disconnected" | "connecting" | "connected" | "error";
 export type ChatPlatform = "twitch" | "youtube" | "kick";
@@ -166,7 +167,7 @@ export const usePollStore = create<PollStore>((set, get) => ({
       })
     );
     set({ poll, lastResult: null });
-    get().onOverlayUpdate?.(JSON.stringify({ type: "poll_update", data: serializePoll(poll) }));
+    get().onOverlayUpdate?.(JSON.stringify({ type: "poll_update", data: serializePoll(poll), seq: nextOverlaySeq() }));
   },
 
   endCurrentPoll: () => {
@@ -186,7 +187,7 @@ export const usePollStore = create<PollStore>((set, get) => ({
       history: [result, ...state.history].slice(0, 200),
     }));
     get().onOverlayUpdate?.(
-      JSON.stringify({ type: "poll_ended", data: { ...serializePoll(poll), result } })
+      JSON.stringify({ type: "poll_ended", data: { ...serializePoll(poll), result }, seq: nextOverlaySeq() })
     );
 
     cancelAutoClear();
@@ -200,7 +201,7 @@ export const usePollStore = create<PollStore>((set, get) => ({
     cancelAutoClear();
     console.log(translate("log.pollCleared"));
     set({ poll: null, lastResult: null });
-    get().onOverlayUpdate?.(JSON.stringify({ type: "poll_cleared", data: null }));
+    get().onOverlayUpdate?.(JSON.stringify({ type: "poll_cleared", data: null, seq: nextOverlaySeq() }));
   },
 
   processMessage: (msg) => {
@@ -226,7 +227,7 @@ export const usePollStore = create<PollStore>((set, get) => ({
       const updatedPoll = { ...poll, options: updatedOptions };
       set({ poll: updatedPoll });
       get().onOverlayUpdate?.(
-        JSON.stringify({ type: "poll_update", data: serializePoll(updatedPoll) })
+        JSON.stringify({ type: "poll_update", data: serializePoll(updatedPoll), seq: nextOverlaySeq() })
       );
     }
   },

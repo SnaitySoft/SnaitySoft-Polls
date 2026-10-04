@@ -3,6 +3,7 @@
 import { BarChart3, Trash2 } from "lucide-react";
 import { usePollStore } from "@/store/usePollStore";
 import { PollOption } from "@/lib/poll/types";
+import { VOTE_PLATFORMS, PLATFORM_BAR_COLOR, PLATFORM_LABEL } from "@/lib/poll/platformColors";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 
 function CardHeader({ t }: { t: ReturnType<typeof useTranslation>["t"] }) {
@@ -62,6 +63,15 @@ export function PollResults() {
 
       <h3 className="text-white font-semibold text-base leading-snug">{displayPoll?.question}</h3>
 
+      <div className="flex items-center gap-3 text-[11px] text-zinc-400">
+        {VOTE_PLATFORMS.map((p) => (
+          <span key={p} className="flex items-center gap-1">
+            <span className={`w-2 h-2 rounded-full ${PLATFORM_BAR_COLOR[p]}`} />
+            {PLATFORM_LABEL[p]}
+          </span>
+        ))}
+      </div>
+
       <div className="space-y-3">
         {options.map((opt, i) => {
           const pct = totalVotes > 0 ? Math.round((opt.votes / totalVotes) * 100) : 0;
@@ -79,13 +89,28 @@ export function PollResults() {
                   {opt.votes} <span className="text-zinc-600">({pct}%)</span>
                 </span>
               </div>
-              <div className="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+              <div
+                className={`w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden ${
+                  isWinner ? "ring-1 ring-indigo-400" : ""
+                }`}
+              >
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    isWinner ? "bg-indigo-500" : "bg-zinc-600"
-                  }`}
+                  className="h-full flex transition-all duration-500"
                   style={{ width: `${pct}%` }}
-                />
+                >
+                  {VOTE_PLATFORMS.map((p) => {
+                    const platformVotes = opt.votesByPlatform?.[p] ?? 0;
+                    if (platformVotes === 0) return null;
+                    const segPct = opt.votes > 0 ? (platformVotes / opt.votes) * 100 : 0;
+                    return (
+                      <div
+                        key={p}
+                        className={`h-full ${PLATFORM_BAR_COLOR[p]}`}
+                        style={{ width: `${segPct}%` }}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             </div>
           );

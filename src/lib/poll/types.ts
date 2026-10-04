@@ -1,10 +1,21 @@
 export type PollStatus = "idle" | "active" | "ended";
 
+export type VotePlatform = "twitch" | "youtube" | "kick";
+
 export interface PollOption {
   id: string;
   label: string;
   votes: number;
+  votesByPlatform: Record<VotePlatform, number>;
   aliases: string[]; // e.g. ["1", "a"] — derived from index
+}
+
+export interface VoteRecord {
+  userId: string;
+  username: string;
+  platform: VotePlatform;
+  optionId: string;
+  timestamp: number;
 }
 
 export interface Poll {
@@ -16,6 +27,7 @@ export interface Poll {
   endsAt: number;
   status: PollStatus;
   voters: Set<string>; // userId → deduplicate
+  voteLog: VoteRecord[]; // every accepted vote, in order — audit trail
   uniqueVotes: boolean; // if false, a user can vote more than once
 }
 
@@ -36,7 +48,7 @@ export interface PollTemplate {
 }
 
 export interface ChatMessage {
-  platform: "twitch" | "youtube" | "kick";
+  platform: VotePlatform;
   userId: string;
   username: string;
   text: string;

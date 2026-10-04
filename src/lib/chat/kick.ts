@@ -29,6 +29,15 @@ export class KickChatConnector {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private stopped = false;
 
+  // Unlike Twitch's tmi.js (which flags self-sent messages so we can drop them), Kick's
+  // Pusher feed echoes back everything posted in the chatroom — including our own say()
+  // announcements — with no "this was me" marker. We can't filter by sender id either,
+  // since that's the same account a streamer legitimately votes from when testing with
+  // their own bot. Instead, track the exact text of what we just sent and swallow the
+  // next matching echo from that account within a short window.
+  private pendingSentTexts = new Map<string, number>(); // content -> expiry ms
+  private static readonly ECHO_WINDOW_MS = 5000;
+
   constructor(
     username: string,
     broadcasterUserId: number,
@@ -91,6 +100,14 @@ export class KickChatConnector {
         const sender = payload.sender ?? payload.user;
         if (!sender) return;
 
+        if (sender.id === this.broadcasterUserId) {
+          const expiry = this.pendingSentTexts.get(payload.content);
+          if (expiry !== undefined) {
+            this.pendingSentTexts.delete(payload.content);
+            if (expiry > Date.now()) return; // echo of our own say() — not a viewer message
+          }
+        }
+
         const msg: ChatMessage = {
           platform: "kick",
           userId: String(sender.id),
@@ -119,6 +136,7 @@ export class KickChatConnector {
     this.ws?.close();
     this.ws = null;
     this.chatroomId = null;
+    this.pendingSentTexts.clear();
     this.onStatusChange("disconnected");
   }
 
@@ -148,6 +166,8 @@ export class KickChatConnector {
         console.error(
           translate("log.kickSayHttpError", { status: res.status, statusText: res.statusText, body })
         );
+      } else {
+        this.pendingSentTexts.set(message, Date.now() + KickChatConnector.ECHO_WINDOW_MS);
       }
     } catch (e) {
       // best-effort — chat announcement failures shouldn't break the poll flow

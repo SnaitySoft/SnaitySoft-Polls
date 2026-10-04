@@ -213,7 +213,7 @@ export const usePollStore = create<PollStore>((set, get) => ({
     if (!poll || poll.status !== "active") return;
 
     const wasDuplicate = poll.uniqueVotes && poll.voters.has(msg.userId);
-    const { voted, updatedOptions } = processVote(poll, msg.userId, msg.text);
+    const { voted, updatedOptions } = processVote(poll, msg.userId, msg.username, msg.text, msg.platform);
     console.log("[vote]", {
       platform: msg.platform,
       userId: msg.userId,

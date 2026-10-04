@@ -1,4 +1,10 @@
-import { Poll, PollOption, PollResult } from "./types";
+import { Poll, PollOption, PollResult, VotePlatform } from "./types";
+
+// Chat clients (notably Twitch's own web UI) silently append an invisible character when
+// you resend an identical message, to dodge the platform's duplicate-message filter — e.g.
+// "1" becomes "1 ͏". Left in, that breaks the exact-match against option aliases, so
+// strip zero-width/format characters before comparing.
+const INVISIBLE_CHARS = /[͏​-‍⁠﻿\u{E0000}-\u{E007F}]/gu;
 
 export function createPoll(
   question: string,
@@ -11,7 +17,12 @@ export function createPoll(
     id: `opt-${i}`,
     label,
     votes: 0,
-    aliases: [String(i + 1), String.fromCharCode(65 + i).toLowerCase(), label.toLowerCase().trim()],
+    votesByPlatform: { twitch: 0, youtube: 0, kick: 0 },
+    aliases: [
+      String(i + 1),
+      String.fromCharCode(65 + i).toLowerCase(),
+      label.replace(INVISIBLE_CHARS, "").toLowerCase().trim(),
+    ],
   }));
 
   return {
@@ -23,6 +34,7 @@ export function createPoll(
     endsAt: now + durationSec * 1000,
     status: "active",
     voters: new Set(),
+    voteLog: [],
     uniqueVotes,
   };
 }
@@ -30,12 +42,14 @@ export function createPoll(
 export function processVote(
   poll: Poll,
   userId: string,
-  text: string
+  username: string,
+  text: string,
+  platform: VotePlatform
 ): { voted: boolean; optionId: string | null; updatedOptions: PollOption[] } {
   if (poll.status !== "active") return { voted: false, optionId: null, updatedOptions: poll.options };
   if (poll.uniqueVotes && poll.voters.has(userId)) return { voted: false, optionId: null, updatedOptions: poll.options };
 
-  const normalized = text.toLowerCase().trim();
+  const normalized = text.replace(INVISIBLE_CHARS, "").toLowerCase().trim();
 
   const matchIndex = poll.options.findIndex((opt) =>
     opt.aliases.some((alias) => alias === normalized)
@@ -45,11 +59,19 @@ export function processVote(
 
   // immutable update — no direct mutation
   const updatedOptions = poll.options.map((opt, i) =>
-    i === matchIndex ? { ...opt, votes: opt.votes + 1 } : opt
+    i === matchIndex
+      ? {
+          ...opt,
+          votes: opt.votes + 1,
+          votesByPlatform: { ...opt.votesByPlatform, [platform]: opt.votesByPlatform[platform] + 1 },
+        }
+      : opt
   );
 
+  const optionId = poll.options[matchIndex].id;
   poll.voters.add(userId);
-  return { voted: true, optionId: poll.options[matchIndex].id, updatedOptions };
+  poll.voteLog.push({ userId, username, platform, optionId, timestamp: Date.now() });
+  return { voted: true, optionId, updatedOptions };
 }
 
 export function endPoll(poll: Poll): PollResult {

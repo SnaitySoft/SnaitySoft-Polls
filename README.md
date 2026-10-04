@@ -1,9 +1,49 @@
-# SnaitySoft Polls
+<p align="right"><strong>English</strong> | <a href="README.pt-BR.md">Português (BR)</a></p>
 
+<p align="center">
+  <img src="src-tauri/icons/icon.png" width="96" height="96" alt="SnaitySoft Polls icon">
+</p>
+
+<h1 align="center">SnaitySoft Polls</h1>
+
+<p align="center">
 Desktop app (Windows/macOS/Linux) for running chat-voted polls across Twitch, YouTube, and
-Kick — built with [Tauri v2](https://tauri.app) + [Next.js](https://nextjs.org). Viewers vote
-by typing in chat, results render live in an [OBS](https://obsproject.com) browser-source
-overlay.
+Kick — built with <a href="https://tauri.app">Tauri v2</a> + <a href="https://nextjs.org">Next.js</a>.
+Viewers vote by typing in chat, results render live in an <a href="https://obsproject.com">OBS</a>
+browser-source overlay.
+</p>
+
+<p align="center">
+  <a href="https://github.com/SnaitySoft/SnaitySoft-Polls/releases/latest">
+    <img src="https://img.shields.io/github/v/release/SnaitySoft/SnaitySoft-Polls?style=for-the-badge&logo=github&label=Download&color=6d28d9" alt="Download the latest release">
+  </a>
+</p>
+
+## Installation
+
+Download the latest installer for your OS from the
+**[Releases page](https://github.com/SnaitySoft/SnaitySoft-Polls/releases)** — Windows, macOS,
+and Linux builds are published automatically for every version.
+
+## Screenshots
+
+| Create & manage polls | Chat connections | Settings |
+|---|---|---|
+| ![Poll creation screen](docs/screenshots/nova-poll.png) | ![Chat connections screen](docs/screenshots/conexoes.png) | ![Settings screen](docs/screenshots/configuracoes.png) |
+
+## Usage
+
+1. **Connect a chat account** — open **Connections** and connect a bot account for Twitch
+   and/or Kick (OAuth login), or paste your live's URL for YouTube (no login needed).
+2. **Create a poll** — on **New Poll**, type a question, add 2–10 options, pick a duration (or
+   a custom one), and optionally toggle unique votes per viewer.
+3. **Add the overlay to OBS** — copy the overlay URL from the sidebar (`http://localhost:9898`)
+   and add it as a Browser Source in OBS; it updates live over WebSocket, no refreshing needed.
+4. **Start the poll** — viewers vote in chat by number, letter, or the option's own text; the
+   live tally shows both in the app's preview and in the OBS overlay.
+5. **Let it end** — automatically when the timer runs out, or end it early from the app. Save
+   questions you reuse often as templates in **My Polls**, and every past result is kept in
+   **History**.
 
 ## Features
 
@@ -17,120 +57,28 @@ overlay.
 - **Auto-clear** — automatically hide the poll preview/overlay a configurable delay after it ends.
 - **Chat announcements** — optionally posts when a poll starts and ends (Twitch and Kick; see
   [Platform integrations](#platform-integrations) for why YouTube doesn't post).
+- **Portuguese and English** — auto-detects your OS language on first run, switchable anytime in
+  Settings.
 
 ## Tech stack
 
-- **Backend**: Rust, [Tauri v2](https://tauri.app), [Axum](https://github.com/tokio-rs/axum)
-  (serves the overlay page, the poll WebSocket, and OAuth redirect callbacks, all on one local
-  port).
-- **Frontend**: Next.js 15 (static export), React, Zustand, Tailwind CSS.
+Rust + [Tauri v2](https://tauri.app) + [Axum](https://github.com/tokio-rs/axum) on the backend,
+Next.js (static export) + React + Zustand + Tailwind CSS on the frontend. See
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the full breakdown.
 
-## Getting started (development)
+## Development
 
-**Prerequisites**: [Node.js](https://nodejs.org) + [pnpm](https://pnpm.io), a
-[Rust toolchain](https://rustup.rs), and Tauri's
-[platform-specific dependencies](https://v2.tauri.app/start/prerequisites/) (on Windows this is
-mainly the WebView2 runtime, usually already present).
-
-```bash
-pnpm install
-```
-
-### App credentials (`.env`)
-
-The app needs OAuth client credentials to let a bot account connect to Twitch and Kick chat.
-These are the *app's* credentials (shared by every install), not something end users provide.
-
-```bash
-cp src-tauri/.env.example src-tauri/.env
-```
-
-Fill in:
-
-| Variable | Where to get it |
-|---|---|
-| `TWITCH_CLIENT_ID` | [dev.twitch.tv/console/apps](https://dev.twitch.tv/console/apps) — client type **Public** (no secret). Uses the Device Code Grant Flow, no redirect URL to register. |
-| `KICK_CLIENT_ID` / `KICK_CLIENT_SECRET` | [kick.com/settings/developer](https://kick.com/settings/developer) — redirect URI `http://localhost:9898/oauth/kick/callback`. |
-
-YouTube needs no credentials — see [Platform integrations](#platform-integrations) below.
-
-`.env` is git-ignored and never committed. In dev mode it's read directly; nothing needs
-encrypting until you build a release (see below).
-
-### Run it
-
-```bash
-pnpm tauri dev
-```
-
-## Building a release
-
-The bundled `.env` resource is AES-256-GCM encrypted rather than shipped as plain text — see
-[Secrets & the encrypted `.env`](#secrets--the-encrypted-env) for why. This adds one step before
-packaging:
-
-```bash
-cd src-tauri
-cargo run --example encrypt_env   # (re)generates .env.enc from your local .env
-cd ..
-pnpm tauri build
-```
-
-The installer lands in `src-tauri/target/release/bundle/`. Re-run `encrypt_env` any time you
-change `.env` — a stale `.env.enc` silently ships old credentials.
-
-### Releasing via CI
-
-Pushing a tag like `v0.2.0` triggers [`.github/workflows/release.yml`](.github/workflows/release.yml),
-which builds Windows, macOS (universal), and Linux bundles and publishes them as a GitHub
-pre-release. It needs three repo secrets set (Settings → Secrets and variables → Actions):
-`TWITCH_CLIENT_ID`, `KICK_CLIENT_ID`, `KICK_CLIENT_SECRET` — same values as your local `.env`.
-
-Before tagging:
-1. Bump the version in `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` together.
-2. Add a `## [x.y.z]` section to [`CHANGELOG.md`](CHANGELOG.md) — the workflow extracts it
-   (up to the next `## [` heading) and uses it as the GitHub release body. If the tag has no
-   matching heading, it falls back to a generic message instead of failing.
+Want to run it from source or contribute a change? Setup, OAuth credentials, building a release,
+and the CI process are all in **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**; contribution
+workflow and code style are in **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)**.
 
 ## Platform integrations
 
-Each platform's official chat API has a real limitation for a local desktop app, so each one
-uses a different approach:
-
-- **Twitch** — official IRC-over-WebSocket chat, official OAuth (Device Code Grant Flow, no
-  client secret — Twitch's "Public" app type doesn't support one).
-- **Kick** — the official API only *delivers* incoming chat via webhooks, which need a public
-  HTTPS URL and aren't viable for a local app. Reading uses the same public Pusher WebSocket
-  kick.com's own site connects to — unofficial, undocumented, and could change without notice.
-  Posting uses the official, documented `POST /public/v1/chat` API with OAuth (PKCE **and** a
-  client secret together — the one platform of the three that requires both).
-- **YouTube** — the official Data API v3 charges quota per chat-read call and exhausts the free
-  10,000/day tier within hours of continuous polling. Reading instead uses YouTube's internal
-  "innertube" endpoint (the same one youtube.com's own web player calls) — no API key, no OAuth,
-  no quota, but unofficial and could break without notice. This is why **YouTube is read-only**:
-  there's no bot account, so it can't post the start/end chat announcement the other two can.
-  You connect it by pasting the live's URL (works for unlisted/private streams too) rather than
-  logging in.
-
-## Secrets & the encrypted `.env`
-
-The bundled `.env` (Twitch/Kick client IDs, Kick's client secret) is encrypted at rest
-(`src-tauri/src/env_crypto.rs`, AES-256-GCM) instead of shipped as a plain-text resource file,
-so it's not readable by just unzipping the installer. Two honest limits worth knowing if you're
-contributing or forking this:
-
-- **This does not stop real reverse engineering.** The app has to decrypt the secret at runtime
-  to make OAuth calls, so the key ships in the binary too. It only raises the bar against casual
-  inspection (opening the installer in an archive tool), not against someone who loads the
-  binary into a disassembler.
-- **The encryption key is never committed.** `build.rs` generates a random key once per checkout
-  into `.enc_key` (git-ignored) and bakes it in at compile time — a key hardcoded in source would
-  be public the moment this repo is, defeating the point entirely. Every contributor's build uses
-  a different key; only `.env.enc` files *you* generate locally are meaningful to *your* build.
-
-The real fix for a truly secret `client_secret` is a server-side token-exchange proxy (the app
-calls your backend, your backend holds the secret) — out of scope for now, but worth knowing this
-is a mitigation, not a guarantee.
+Twitch and Kick connect via a bot account and can post chat announcements. YouTube is
+**read-only** — no login, just paste your live's URL — so it can't post the start/end
+announcement the other two can. Each platform needed a different, sometimes unofficial,
+approach behind the scenes; the full rationale and trade-offs are in
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#platform-integrations).
 
 ## License
 

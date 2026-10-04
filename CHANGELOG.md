@@ -7,6 +7,26 @@ The `## [x.y.z]` heading text below this line is what `.github/workflows/release
 extracts as the GitHub release body when you push a matching `vx.y.z` tag — keep it
 updated before tagging a release, or the workflow falls back to a generic message.
 
+## [0.3.0] - 2026-10-04
+
+### ✨ Highlights
+
+- **Votes now show which platform they came from.** The poll overlay and the in-app
+  preview/history render a stacked, color-coded bar per option — Twitch, YouTube, and Kick
+  each get their own segment and color, with a legend.
+- **Poll history got a lot more detailed.** Each entry now shows the winner, total votes per
+  platform, and an expandable audit log listing every individual vote (voter, platform,
+  chosen option, timestamp).
+
+### Fixed
+
+- A chat client (notably Twitch's own web UI) silently appends an invisible character when
+  you resend an identical message, to dodge the platform's duplicate-message filter — this
+  could make a resent vote fail to match its option. Votes are now normalized to strip these
+  before matching.
+- The Kick connector was re-processing its own poll start/end chat announcements as incoming
+  messages when they echoed back over the Pusher socket.
+
 ## [0.2.0] - 2026-08-25
 
 ### ✨ Highlights

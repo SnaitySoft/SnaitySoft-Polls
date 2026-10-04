@@ -184,6 +184,13 @@ fn overlay_html(port: u16) -> String {
   }}
   @keyframes pulse {{ 0%,100% {{ opacity: 1; }} 50% {{ opacity: 0.35; }} }}
 
+  .legend {{ display: flex; gap: 14px; margin-bottom: 14px; }}
+  .legend-item {{ display: flex; align-items: center; gap: 6px; color: #a1a1aa; font-size: 11px; font-weight: 600; }}
+  .legend-item .dot {{ width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }}
+  .dot-twitch, .seg-twitch {{ background: #9146ff; }}
+  .dot-youtube, .seg-youtube {{ background: #ff0000; }}
+  .dot-kick, .seg-kick {{ background: #53fc18; }}
+
   #options {{ display: flex; flex-direction: column; gap: 12px; }}
   .opt {{ display: flex; align-items: center; gap: 10px; }}
   .opt-num {{
@@ -197,8 +204,9 @@ fn overlay_html(port: u16) -> String {
   .opt-label {{ display: flex; align-items: center; gap: 6px; color: #e4e4e7; font-size: 14px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
   .opt-count {{ color: #fff; font-size: 14px; font-weight: 700; flex-shrink: 0; white-space: nowrap; }}
   .bar-bg {{ background: rgba(255,255,255,0.07); border-radius: 999px; height: 9px; overflow: hidden; }}
-  .bar {{ height: 100%; border-radius: 999px; background: rgba(255,255,255,0.18); transition: width 0.5s ease; }}
-  .bar.winner {{ background: linear-gradient(90deg, #38bdf8, #a855f7, #ec4899); }}
+  .bar-bg.winner {{ box-shadow: inset 0 0 0 1.5px rgba(168,85,247,0.9); }}
+  .bar-stack {{ height: 100%; display: flex; transition: width 0.5s ease; }}
+  .seg {{ height: 100%; }}
 
   .footer {{ display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }}
   .votes {{ display: flex; align-items: center; gap: 6px; color: #a1a1aa; font-size: 12px; font-weight: 600; }}
@@ -225,6 +233,12 @@ fn overlay_html(port: u16) -> String {
       <span class="dot"></span>
       Ao vivo
     </span>
+  </div>
+
+  <div class="legend">
+    <span class="legend-item"><span class="dot dot-twitch"></span>Twitch</span>
+    <span class="legend-item"><span class="dot dot-youtube"></span>YouTube</span>
+    <span class="legend-item"><span class="dot dot-kick"></span>Kick</span>
   </div>
 
   <div id="options"></div>
@@ -273,10 +287,19 @@ fn overlay_html(port: u16) -> String {
 
     document.getElementById('question').textContent = d.question;
 
+    var platforms = ['twitch', 'youtube', 'kick'];
     var html = '';
     d.options.forEach(function(opt, i) {{
       var pct = total > 0 ? Math.round(opt.votes / total * 100) : 0;
       var isWin = isEnded && opt.votes === winnerVotes && total > 0;
+      var vbp = opt.votesByPlatform || {{}};
+      var segHtml = '';
+      platforms.forEach(function(p) {{
+        var v = vbp[p] || 0;
+        if (!v || !opt.votes) return;
+        var segPct = Math.round(v / opt.votes * 100);
+        segHtml += '<div class="seg seg-' + p + '" style="width:' + segPct + '%"></div>';
+      }});
       html += '<div class="opt">'
         + '<div class="opt-num">' + (i+1) + '</div>'
         + '<div class="opt-body">'
@@ -284,7 +307,7 @@ fn overlay_html(port: u16) -> String {
         + '<span class="opt-label">' + (isWin ? '🏆 ' : '') + esc(opt.label) + '</span>'
         + '<span class="opt-count">' + opt.votes + ' (' + pct + '%)</span>'
         + '</div>'
-        + '<div class="bar-bg"><div class="bar' + (isWin ? ' winner' : '') + '" style="width:' + pct + '%"></div></div>'
+        + '<div class="bar-bg' + (isWin ? ' winner' : '') + '"><div class="bar-stack" style="width:' + pct + '%">' + segHtml + '</div></div>'
         + '</div>'
         + '</div>';
     }});
